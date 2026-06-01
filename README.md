@@ -15,7 +15,7 @@ For convenience, we include the processed dataset in this repository (`./dataset
 If you want to fetch the dataset and preprocess it locally, follow the instructions below.
 
 To setup the Python environment, run
-0. Navigate to `preprocessing` folder
+1. Navigate to `preprocessing` folder
    ```
    cd /path-to-repo/preprocess
    ```
@@ -23,20 +23,20 @@ To setup the Python environment, run
    ```
    python -m venv ./venv
    ```
-2. Activate virtual environment
+1. Activate virtual environment
    ```
    ./venv/Scripts/activate
    ```
-3. Install dependencies
+1. Install dependencies
    ```
    pip install -r requirements.txt
    ```
-4. Install browser binaries for using scraping
+1. Install browser binaries for using scraping
    ```
    python -m playwright install chromium
    ```
 
-Finally, download and process the dataset by running
+Finally, download and process the dataset by running (still in the `processing` folder with activated virtual environment)
    ```
    python ./all.py
    ```
