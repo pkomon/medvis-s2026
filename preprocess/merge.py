@@ -9,20 +9,30 @@ def read_and_concat_files(input_dir_path: Path, output_file_path: Path) -> pd.Da
     merged_df = pd.DataFrame()
 
     for file_path in file_paths:
-        print(f"process {file_path}...")
+        print(f"Process {file_path}...")
         with open(file_path, "rt", encoding="utf-8") as file:
+            assert file_path.name.endswith(".csv"), f"Unexpected file in download folder: {file_path}"
+
             # skip all lines until actual data
             while file.readline().strip() != "Data for boxplots":
                 pass
 
+            # parse csv
             df = pd.read_csv(file)
+
+            # add year column
+            year = file_path.name.split("_")[0]
+            df.insert(0, "Year", year)
+
+            # merge
             if merged_df.empty:
                 merged_df = pd.concat([df])
             else:
-                merged_df = pd.concat([merged_df, df])
-    print("writing output file...")
-    df.to_csv(output_file_path, index=False, lineterminator='\n')
-    print("done.")
+                merged_df = pd.concat([df, merged_df])
+
+    print("Writing output file...")
+    merged_df.to_csv(output_file_path, index=False, lineterminator='\n')
+    print("Done.")
 
 if __name__ == "__main__":
     read_and_concat_files(constants.DOWNLOAD_DIR_PATH, constants.OUTPUT_FILE_PATH)
