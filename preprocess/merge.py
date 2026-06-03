@@ -31,7 +31,8 @@ def read_and_concat_files(input_dir_path: Path, output_file_path: Path) -> pd.Da
                 merged_df = pd.concat([df, merged_df])
 
     print("Writing output file...")
-    merged_df.to_csv(output_file_path, index=False, lineterminator='\n')
+    # use ";"" as separator because some country names include "," and that way we avoid quoting
+    merged_df.to_csv(output_file_path, index=False, sep=";", lineterminator="\n")
     print("Done.")
 
 if __name__ == "__main__":
