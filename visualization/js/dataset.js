@@ -11,7 +11,7 @@ class DataItem {
      * e.g. Bloodstream, Urinary tract, Gastrointestinal, ect.
      * @type {string}
      */
-    specimen = undefined;
+    infection = undefined;
 
     /**
      * Name of the pathogen that was tested.
@@ -66,13 +66,13 @@ class DataItem {
     /**
      * Creates a new data item for a given row of a CSV file.
      * The order of columns is hardcoded here.
-     * @param {string[]} values the string values of a single row in the CSV file
+     * @param {Array<string>} values the string values of a single row in the CSV file
      * @returns {DataItem} new data item object for this row
      */
     static fromCsvRow(values) {
         const item = new DataItem();
         item.year = parseInt(values[0]);
-        item.specimen = values[1];
+        item.infection = values[1];
         item.pathogen = values[2];
         item.antibiotic = values[3];
         item.iso3 = values[4];
@@ -80,6 +80,7 @@ class DataItem {
         item.whoRegionName = values[6];
         item.numTests = parseInt(values[7]);
         item.numResistant = parseInt(values[8]);
+        item.percentResistant = parseFloat(values[9]);
         return item;
     }
 }
@@ -90,6 +91,67 @@ class Dataset {
      * @type {DataItem[]}
      */
     items = [];
+
+    /**
+     * Map of infection names to map of pathogen names to set of antibiotics.
+     * (infection (Map) -> pathogen (Map) -> antibiotics (Set))
+     * @type {Map<string, Map<string, Set>>}
+     */
+    infectionMap = new Map();
+
+    /**
+     * Map of country ISO3 codes to country names.
+     * @type {Map<string, string>}
+     */
+    countryMap = new Map();
+
+    constructor(items) {
+        this.items = items;
+        this.initMaps();
+    }
+
+    /**
+     * Returns unique fields of data items.
+     * @param {function(DataItem)} accessor function that takes a data item and returns some field
+     * @returns {Array<string|number>} unique values
+     */
+    getUnique(accessor) {
+        const set = new Set();
+        this.items
+            .map(item => accessor(item))
+            .forEach(name => set.add(name));
+        return new Array(...set.keys());
+    }
+
+    /**
+     * 
+     * @returns {Array<string>} unique infection names
+     */
+    getInfectionNames() {
+        return new Array(...this.infectionMap.keys());
+    }
+
+    /**
+     * Returns unique pathogen names for specific infection.
+     * @param {string} infectionName name of infection
+     * @return {Map<string>} unique pathogen names
+     */
+    getPathogenNames(infectionName) {
+        return new Array(...this.infectionMap.get(infectionName).keys());
+    }
+
+    /**
+     * Populates helper mappings {@link infectionMap} and {@link countryMap}
+     */
+    initMaps() {
+        this.items.forEach(item => {
+            const pathogenMap = this.infectionMap.getOrInsert(item.infection, new Map());
+            const antibioticsSet = pathogenMap.getOrInsert(item.pathogen, new Set());
+            antibioticsSet.add(item.antibiotic);
+
+            this.countryMap.set(item.iso3, item.countryName);
+        });
+    }
 }
 
 /**
@@ -97,9 +159,9 @@ class Dataset {
  * @param {string} text plain text in CSV format
  * @param {string} lineSeparator separator to use for splitting string into rows
  * @param {string} columnSeparator separator to use for splitting rows into cells
- * @returns {string[][]} parsed result
+ * @returns {Array<Array<string>>} parsed result
  */
-function parseCsv(text, lineSeparator = "\n", columnSeparator = ",") {
+function parseCsv(text, lineSeparator = "\n", columnSeparator = ";") {
     return text.split(lineSeparator)
         .filter(line => line.length !== 0) // skip empty lines
         .map(line => line.split(columnSeparator));
@@ -117,10 +179,8 @@ export async function fetchDataset() {
         throw new Error(`Failed to fetch dataset from ${AMR_URL}, status: ${response.status} ${response.statusText}`);
     }
     const csvText = await response.text();
-    const rows = parseCsv(csvText);
-    const dataset = new Dataset();
-    dataset.items = rows
+    const dataItems = parseCsv(csvText)
         .slice(1) // skip header row
         .map(row => DataItem.fromCsvRow(row));
-    return dataset;
+    return new Dataset(dataItems);
 }

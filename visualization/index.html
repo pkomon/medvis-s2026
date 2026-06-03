@@ -2,23 +2,61 @@
 <html>
 
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antimicrobial Resistance dashboard</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "d3": "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+      }
+    }
+  </script>
   <script type="module" src="js/main.js"></script>
 </head>
 
 <body>
   <header>
-    AMR dashboard
+    <h1>Antimicrobial Resistance Dashboard</h1>
   </header>
   <main>
-    <div>
-      <label for="specimen-select">Choose a specimen:</label>
-      <select id="specimen-select">
-      </select>
+    <div class="filters">
+      <div>
+        <label for="infection-select">Infection:</label>
+        <select id="infection-select"></select>
+      </div>
+      <div>
+        <label for="pathogen-select">Pathogen:</label>
+        <select id="pathogen-select">
+        </select>
+      </div>
+      <div>
+        <label for="year-select">Year:</label>
+        <select id="year-select">
+          <option value="2020">2020</option>
+          <option value="2021">2021</option>
+          <option value="2022">2022</option>
+          <option value="2023">2023</option>
+        </select>
+      </div>
+      <div>
+        <label for="country-select">Country:</label>
+        <select id="country-select">
+        </select>
+      </div>
+
     </div>
-    <div>
-      <label for="bacteria-select">Choose a bacteria:</label>
-      <select id="bacteria-select">
-      </select>
+
+    <div id="charts">
+      <div>
+        <h2>Relative amount of resistance per antibiotic</h2>
+        <div id="barchart"></div>
+      </div>
+      <div>
+        <h2>Trend over time per antibiotic</h2>
+        <div id="linechart-grid"></div>
+      </div>
     </div>
   </main>
 </body>
