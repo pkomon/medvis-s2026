@@ -107,6 +107,15 @@ export class LineChart {
                 .attr("fill", "none")
                 .attr("stroke", color)
                 .attr("stroke-width", 2.5);
+
+            selection
+                .data(data)
+                .join("circle")
+                .attr("r", 3)
+                .attr("cx", d => this.x(this.xAccessor(d)))
+                .attr("cy", d => this.y(this.yAccessor(d)))
+                .attr("stroke", color)
+                .attr("stroke-width", 2.5);
         });
     }
 
