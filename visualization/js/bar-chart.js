@@ -21,9 +21,9 @@ export class BarChart {
         this.valueAccessor = valueAccessor;
 
         // set the dimensions and margins of the graph
-        const margin = { top: 30, right: 30, bottom: 70, left: 100 };
+        const margin = { top: 30, right: 30, bottom: 0, left: 100 };
         this.width = 800 - margin.left - margin.right;
-        this.height = 300 - margin.top - margin.bottom;
+        this.height = 500 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
         this.svg = d3.select(`#${containerId}`)
@@ -94,7 +94,7 @@ export class BarChart {
         this.svg.selectAll(".myYAxis")
             .call(this.yAxis)
             .selectAll("text")
-            .attr("transform", "translate(-10,0)")
+            .attr("transform", "translate(-4,0)")
             .style("text-anchor", "end");
 
         // update bars
