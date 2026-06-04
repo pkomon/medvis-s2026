@@ -3,7 +3,7 @@ import * as d3 from "d3";
 export class BoxPlot {
 
     svg = undefined;
-    content = undefined;
+    boxes = undefined;
     width = undefined;
     height = undefined;
     x = undefined;
@@ -16,6 +16,8 @@ export class BoxPlot {
     onClickCallback = undefined;
     onMouseLeaveCallback = undefined;
     onMouseEnterCallback = undefined;
+
+    summaryPerGroup = undefined;
 
     constructor(containerId, nameAccessor, valueAccessor) {
         this.nameAccessor = nameAccessor;
@@ -34,7 +36,8 @@ export class BoxPlot {
             .append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        this.content = this.svg.append("g");
+        this.boxes = this.svg.append("g");
+        this.points = this.svg.append("g");
 
         // y axis
         this.y = d3.scaleBand()
@@ -103,6 +106,7 @@ export class BoxPlot {
                 const max = sorted.at(-1);
                 return [key, { "min": min, "q1": q1, "median": median, "q3": q3, "max": max }];
             });
+        this.summaryPerGroup = new Map(summaryPerGroup);
 
         // update x axis
         this.x.domain([0, 100]);
@@ -117,7 +121,7 @@ export class BoxPlot {
             .style("text-anchor", "end");
 
         // draw boxes
-        this.content.selectAll(".minMaxLine")
+        this.boxes.selectAll(".minMaxLine")
             .data(summaryPerGroup)
             .join("line")
             .attr("class", "minMaxLine")
@@ -127,7 +131,7 @@ export class BoxPlot {
             .attr("y2", ([groupName, _]) => this.y(groupName) + this.y.bandwidth() / 2)
             .attr("stroke", "black")
             .attr("stroke-width", 1);
-        this.content.selectAll(".quantileBox")
+        this.boxes.selectAll(".quantileBox")
             .data(summaryPerGroup)
             .join("rect")
             .attr("class", "quantileBox")
@@ -138,7 +142,7 @@ export class BoxPlot {
             .attr("fill", "lightgrey")
             .attr("stroke", "black")
             .attr("stroke-width", 1);
-        this.content.selectAll(".medianLine")
+        this.boxes.selectAll(".medianLine")
             .data(summaryPerGroup)
             .join("line")
             .attr("class", "medianLine")
@@ -150,12 +154,12 @@ export class BoxPlot {
             .attr("stroke-width", 1);
 
         // draw points
-        const jitter = this.y.bandwidth() * 0.4;
+        const jitter = this.y.bandwidth() * 0.45;
         const groupItemPairs = Object.entries(data)
             .map(([key, items]) => items.map(item => [key, item]))
             .flat();
 
-        this.content.selectAll(".boxplot-data-items")
+        this.points.selectAll(".boxplot-data-items")
             .data(groupItemPairs)
             .join("circle")
             .attr("class", "boxplot-data-items")
