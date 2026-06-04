@@ -74,6 +74,7 @@ export class LineChart {
                 .attr("text-anchor", "middle")
                 .attr("x", width / 2)
                 .attr("y", "0%")
+                .style("font-size", "12px")
                 .text(title);
         }
     }
