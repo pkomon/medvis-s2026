@@ -4,10 +4,13 @@ body {
 }
 
 header {
-    background-color: #0c2b64;
-    color: white;
+    display: grid;
+    grid-template-columns: auto 1fr;
     margin: 0;
     padding: 0;
+    align-items: center;
+    background-color: #0c2b64;
+    color: white;
 }
 
 main {
@@ -28,7 +31,7 @@ h2 {
 .filters {
     display: grid;
     gap: 1px;
-    grid-template-columns: 11ch 1fr;
+    grid-template-columns: auto 1fr;
     padding: 4px;
     border: solid black 1px;
     border-radius: 4px;

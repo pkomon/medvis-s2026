@@ -18,7 +18,15 @@
 
 <body>
   <header>
-    <h1>Antimicrobial Resistance Dashboard</h1>
+    <div>
+      <h1>Antimicrobial Resistance Dashboard</h1>
+    </div>
+    <div>
+      <select id="area-mode-select">
+        <option>Country</option>
+        <option>Region</option>
+      </select>
+    </div>
   </header>
   <main>
     <div class="filters">
@@ -45,6 +53,10 @@
       <div>
         <h2>Trend over time per antibiotic</h2>
         <div id="linechart-grid"></div>
+      </div>
+      <div id="boxplot-container">
+        <h2>Boxplot</h2>
+        <div id="boxplot"></div>
       </div>
     </div>
   </main>
