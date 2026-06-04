@@ -5,7 +5,7 @@ body {
 
 header {
     background-color: #0c2b64;
-    color: white; 
+    color: white;
     margin: 0;
     padding: 0;
 }
@@ -25,6 +25,20 @@ h2 {
     margin: 0 0 8px 0;
 }
 
+.filters {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: 11ch 1fr;
+    padding: 4px;
+    border: solid black 1px;
+    border-radius: 4px;
+}
+
+.filters>div:nth-child(odd) {
+    text-align: right;
+    margin-right: 8px;
+}
+
 #linechart-grid {
     display: grid;
     grid-template-columns: 200px 200px 200px;
@@ -34,6 +48,12 @@ h2 {
 #charts {
     display: grid;
     grid-template-columns: 800px 1fr;
-    margin: 16px 0 0 0;
-    gap: 12px
+    margin: 8px 0 0 0;
+    gap: 8px
+}
+
+#charts>div {
+    border: solid black 1px;
+    border-radius: 4px;
+    padding: 4px;
 }
