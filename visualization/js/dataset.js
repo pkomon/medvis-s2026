@@ -155,7 +155,6 @@ class Dataset {
                     .sort(([_, countryName1], [__, countryName2]) => countryName1 > countryName2)
                     .map(([isoCode, _], __) => isoCode))
             ]));
-        console.log(this.regionIndex);
     }
 }
 

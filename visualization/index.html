@@ -23,7 +23,7 @@
     </div>
     <div>
       <select id="area-mode-select">
-        <option>Country</option>
+        <option selected>Country</option>
         <option>Region</option>
       </select>
     </div>
@@ -38,7 +38,7 @@
           <option value="2020">2020</option>
           <option value="2021">2021</option>
           <option value="2022">2022</option>
-          <option value="2023">2023</option>
+          <option value="2023" selected>2023</option>
         </select>
       </div>
       <div><label for="country-select">Country</label></div>
@@ -46,17 +46,17 @@
     </div>
 
     <div id="charts">
-      <div>
+      <div id="barchart-container">
         <h2>Relative amount of resistance per antibiotic</h2>
         <div id="barchart"></div>
+      </div>
+      <div id="boxplot-container" hidden>
+        <h2>Boxplot</h2>
+        <div id="boxplot"></div>
       </div>
       <div>
         <h2>Trend over time per antibiotic</h2>
         <div id="linechart-grid"></div>
-      </div>
-      <div id="boxplot-container">
-        <h2>Boxplot</h2>
-        <div id="boxplot"></div>
       </div>
     </div>
   </main>

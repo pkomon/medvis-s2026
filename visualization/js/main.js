@@ -1,5 +1,8 @@
+import * as d3 from "d3";
+
 import { fetchDataset } from "./dataset.js"
 import { BarChart } from "./bar-chart.js";
+import { BoxPlot } from "./boxplot.js";
 import { MultipleSmallLineCharts } from "./line-chart.js";
 
 /**
@@ -52,6 +55,15 @@ function updateSelectGroup(selectElement, data, compoundValues = false, compound
     selectElement.append(...nodes);
 }
 
+function groupBy(data, accessor) {
+    const result = new Map();
+    data.forEach(item => {
+        const array = result.getOrInsert(accessor(item), []);
+        array.push(item);
+    });
+    return Object.fromEntries(result);
+}
+
 async function main() {
     const dataset = await fetchDataset();
 
@@ -61,6 +73,8 @@ async function main() {
 
     const updateCharts = () => {
         const [infection, pathogen] = bacteriaSelect.value.split("_");
+        const year = parseInt(yearSelect.value);
+        const country = countrySelect.value;
         console.log(`Update chart, infection type=${infection}, pathogen=${pathogen}`);
 
         // update line charts
@@ -68,20 +82,23 @@ async function main() {
         const lineChartData = dataset.items
             .filter(item => item.infection === infection
                 && item.pathogen === pathogen
-                && item.iso3 === countrySelect.value);
-        const antibiotics = new Map();
-        lineChartData
-            .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year)
-            .forEach(item => {
-                const array = antibiotics.getOrInsert(item.antibiotic, []);
-                array.push(item);
-            });
-        const lineData = Object.fromEntries(antibiotics);
-        lineChart.setData(lineData);
+                && item.iso3 === country)
+            .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year);
+        const perLineData = groupBy(lineChartData, item => item.antibiotic);
+        lineChart.setData(perLineData);
 
         // update bar chart
-        const barChartData = lineChartData.filter(item => item.year === parseInt(yearSelect.value));
+        const barChartData = lineChartData.filter(item => item.year === year);
         barChart.setData(barChartData);
+
+        // update boxplot
+        //TODO dont hardcore global data, use region select
+        const boxPlotData = dataset.items
+            .filter(item => item.infection === infection
+                && item.pathogen === pathogen
+                && item.year === year);
+        const perBoxData = groupBy(boxPlotData, item => item.antibiotic);
+        boxPlot.setData(perBoxData);
     };
 
     // TODO for each selection, we should update all others with available data - but this might be confusing to user?
@@ -96,9 +113,18 @@ async function main() {
     yearSelect.addEventListener("change", (event) => updateCharts());
     countrySelect.addEventListener("change", (event) => updateCharts());
 
+    document.getElementById("area-mode-select").addEventListener("change", (event) => {
+        updateCharts();
+        const isCountryMode = event.target.value === "Country";
+        document.getElementById("barchart-container").hidden = !isCountryMode;
+        document.getElementById("boxplot-container").hidden = isCountryMode;
+    });
+
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
+    const boxPlot = new BoxPlot("boxplot", item => item.antibiotic, item => item.percentResistant);
     const lineChart = new MultipleSmallLineCharts("linechart-grid", item => item.year, item => item.percentResistant);
 
+    // fill options for dropdown
     const bacteriaSelectData = Object.fromEntries([...dataset.infectionIndex.entries()] // infection -> pathogen -> antibiotic
         .map(([key, value]) => [key, { "values": [...value.keys()] }]));
     updateSelectGroup(bacteriaSelect, bacteriaSelectData, true, true);
@@ -109,13 +135,29 @@ async function main() {
             const names = values.map(code => dataset.countryIndex.get(code));
             return [regionName, { "values": values, "names": names }];
         }));
-    console.log(countrySelectData);
-
     updateSelectGroup(countrySelect, countrySelectData);
-    //updateSelectGroup(countrySelect, { "values": [...dataset.countryIndex.keys()], "names": [...dataset.countryIndex.values()] });
 
     // updating options does not trigger event, call ourselves
     updateCharts();
+
+    boxPlot.setOnMouseEnter((mode, dataItem, element) => {
+        if (mode === "item") {
+            d3.select(element)
+                .transition()
+                .duration(100)
+                .attr("fill", "red");
+            //TODO show popup with details (using dataItem)
+        }
+    });
+    boxPlot.setOnMouseLeave((mode, dataItem, element) => {
+        if (mode === "item") {
+            d3.select(element)
+                .transition()
+                .duration(100)
+                .attr("fill", "black");
+            //TODO hide popup
+        }
+    });
 }
 
 main();
