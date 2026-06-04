@@ -29,17 +29,12 @@ h2 {
 }
 
 .filters {
-    display: grid;
-    gap: 1px;
-    grid-template-columns: auto 1fr;
-    padding: 4px;
-    border: solid black 1px;
-    border-radius: 4px;
-}
-
-.filters>div:nth-child(odd) {
-    text-align: right;
-    margin-right: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: end;
+    /*border: solid black 1px;*/
+    /*border-radius: 4px;*/
 }
 
 #linechart-grid {
@@ -59,4 +54,86 @@ h2 {
     border: solid black 1px;
     border-radius: 4px;
     padding: 4px;
+}
+
+.detail-panel {
+    border: 1px solid #d4dae6;
+    border-radius: 6px;
+    margin: 14px 0 0 0;
+    padding: 10px 12px;
+    max-width: 780px;
+    background: #f8fafc;
+}
+
+.detail-panel h2 {
+    margin: 0 0 6px 0;
+}
+
+.detail-content {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 8px 14px;
+    font-size: 0.95rem;
+}
+
+.detail-empty {
+    display: block;
+    color: #536076;
+}
+
+.detail-item {
+    min-width: 0;
+}
+
+.detail-label {
+    display: block;
+    color: #536076;
+    font-size: 0.78rem;
+}
+
+.detail-value {
+    font-weight: 650;
+}
+
+.bar {
+    cursor: pointer;
+    transition: fill 120ms ease, opacity 120ms ease;
+}
+
+.bar.dimmed {
+    opacity: 0.35;
+}
+
+.bar.highlighted {
+    fill: #2f7fbd;
+}
+
+.bar.selected {
+    fill: #c84f31;
+}
+
+.linechart-container {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 2px;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+
+.linechart-container.dimmed {
+    opacity: 0.38;
+}
+
+.linechart-container.highlighted {
+    border-color: #2f7fbd;
+    background: #eef6fc;
+}
+
+.linechart-container.selected {
+    border-color: #c84f31;
+    background: #fff3ee;
+}
+
+.line-series {
+    transition: stroke 120ms ease, stroke-width 120ms ease, opacity 120ms ease;
 }

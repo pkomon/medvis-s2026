@@ -11,6 +11,10 @@ export class BarChart {
     yAxis = undefined;
     nameAccessor = undefined;
     valueAccessor = undefined;
+    onHoverCallback = undefined;
+    onClickCallback = undefined;
+    highlightedName = undefined;
+    selectedName = undefined;
 
     constructor(containerId, nameAccessor, valueAccessor) {
         this.nameAccessor = nameAccessor;
@@ -51,6 +55,30 @@ export class BarChart {
         this.onClickCallback = callback;
     }
 
+    setOnHoverCallback(callback) {
+        this.onHoverCallback = callback;
+    }
+
+    setHighlight(name) {
+        this.highlightedName = name;
+        this.updateStyles();
+    }
+
+    setSelection(name) {
+        this.selectedName = name;
+        this.updateStyles();
+    }
+
+    updateStyles() {
+        this.content.selectAll("rect")
+            .classed("highlighted", d => this.nameAccessor(d) === this.highlightedName)
+            .classed("selected", d => this.nameAccessor(d) === this.selectedName)
+            .classed("dimmed", d => {
+                const activeName = this.highlightedName || this.selectedName;
+                return activeName !== undefined && this.nameAccessor(d) !== activeName;
+            });
+    }
+
     setData(data, sortBarsByValue = true) {
         if (sortBarsByValue) {
             data = data.sort((a, b) => this.valueAccessor(a) < this.valueAccessor(b));
@@ -79,13 +107,22 @@ export class BarChart {
             .attr("height", this.y.bandwidth())
             .attr("fill", "#69b3a2")
             .attr("class", "bar")
-            .attr("id", d => `bar-${this.nameAccessor(d)}`)
-            .on("click", event => {
-                const id = event.target.id;
-                const name = id.split("-")[1];
+            .on("mouseenter", (event, d) => {
+                if (this.onHoverCallback !== undefined) {
+                    this.onHoverCallback(this.nameAccessor(d));
+                }
+            })
+            .on("mouseleave", () => {
+                if (this.onHoverCallback !== undefined) {
+                    this.onHoverCallback(undefined);
+                }
+            })
+            .on("click", (event, d) => {
+                const name = this.nameAccessor(d);
                 if (this.onClickCallback !== undefined) {
                     this.onClickCallback(name);
                 }
             });
+        this.updateStyles();
     }
 }

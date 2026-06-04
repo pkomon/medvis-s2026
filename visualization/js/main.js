@@ -64,12 +64,115 @@ function groupBy(data, accessor) {
     return Object.fromEntries(result);
 }
 
+function getOrInsert(map, key, defaultValue) {
+    if (!map.has(key)) {
+        map.set(key, defaultValue);
+    }
+    return map.get(key);
+}
+
+function formatPercent(value) {
+    if (value === undefined || Number.isNaN(value)) {
+        return "n/a";
+    }
+    return `${value.toFixed(1)}%`;
+}
+
+function formatInteger(value) {
+    if (value === undefined || Number.isNaN(value)) {
+        return "n/a";
+    }
+    return value.toLocaleString("en-US");
+}
+
 async function main() {
     const dataset = await fetchDataset();
 
     const bacteriaSelect = document.getElementById("bacteria-select");
     const yearSelect = document.getElementById("year-select");
     const countrySelect = document.getElementById("country-select");
+    const detailContent = document.getElementById("detail-content");
+
+    let currentLineChartData = [];
+    let currentBarChartData = [];
+    let hoveredAntibiotic = undefined;
+    let selectedAntibiotic = undefined;
+
+    const getActiveAntibiotic = () => hoveredAntibiotic || selectedAntibiotic;
+
+    const getCurrentItem = (antibioticName) => currentBarChartData
+        .find(item => item.antibiotic === antibioticName);
+
+    const updateDetailPanel = (antibioticName) => {
+        const item = antibioticName !== undefined ? getCurrentItem(antibioticName) : undefined;
+        if (item === undefined) {
+            detailContent.className = "detail-content detail-empty";
+            detailContent.textContent = "Hover or click an antibiotic to inspect resistance details.";
+            return;
+        }
+
+        const sorted = [...currentBarChartData]
+            .filter(d => d.percentResistant > 0)
+            .sort((a, b) => a.percentResistant - b.percentResistant);
+        const rank = sorted.findIndex(d => d.antibiotic === item.antibiotic) + 1;
+        const total = sorted.length;
+        const susceptible = 100 - item.percentResistant;
+
+        detailContent.className = "detail-content";
+        detailContent.innerHTML = `
+            <div class="detail-item">
+                <span class="detail-label">Antibiotic</span>
+                <span class="detail-value">${item.antibiotic}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Reported resistance</span>
+                <span class="detail-value">${formatPercent(item.percentResistant)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Estimated susceptibility</span>
+                <span class="detail-value">${formatPercent(susceptible)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Rank</span>
+                <span class="detail-value">${rank} of ${total} (lower resistance first)</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Resistant / ASTs</span>
+                <span class="detail-value">${formatInteger(item.numResistant)} / ${formatInteger(item.numTests)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Country</span>
+                <span class="detail-value">${item.countryName}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Pathogen</span>
+                <span class="detail-value">${item.pathogen}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Year</span>
+                <span class="detail-value">${item.year}</span>
+            </div>
+        `;
+    };
+
+    const updateLinkedState = () => {
+        const activeAntibiotic = getActiveAntibiotic();
+        barChart.setHighlight(hoveredAntibiotic);
+        barChart.setSelection(selectedAntibiotic);
+        lineChart.setHighlight(hoveredAntibiotic);
+        lineChart.setSelection(selectedAntibiotic);
+        updateDetailPanel(activeAntibiotic);
+    };
+
+    const setHoveredAntibiotic = (antibioticName) => {
+        hoveredAntibiotic = antibioticName;
+        updateLinkedState();
+    };
+
+    const setSelectedAntibiotic = (antibioticName) => {
+        selectedAntibiotic = selectedAntibiotic === antibioticName ? undefined : antibioticName;
+        updateLinkedState();
+    };
 
     const updateCharts = () => {
         const [infection, pathogen] = bacteriaSelect.value.split("_");
@@ -79,17 +182,22 @@ async function main() {
 
         // update line charts
         lineChart.removeAll();
-        const lineChartData = dataset.items
+        currentLineChartData = dataset.items
             .filter(item => item.infection === infection
                 && item.pathogen === pathogen
                 && item.iso3 === country)
             .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year);
-        const perLineData = groupBy(lineChartData, item => item.antibiotic);
+        const perLineData = groupBy(currentLineChartData, item => item.antibiotic);
         lineChart.setData(perLineData);
 
+
         // update bar chart
-        const barChartData = lineChartData.filter(item => item.year === year);
-        barChart.setData(barChartData);
+        currentBarChartData = currentLineChartData.filter(item => item.year === year);
+        if (selectedAntibiotic !== undefined && getCurrentItem(selectedAntibiotic) === undefined) {
+            selectedAntibiotic = undefined;
+        }
+        barChart.setData(currentBarChartData);
+        updateLinkedState();
 
         // update boxplot
         //TODO dont hardcore global data, use region select
@@ -123,6 +231,10 @@ async function main() {
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
     const boxPlot = new BoxPlot("boxplot", item => item.antibiotic, item => item.percentResistant);
     const lineChart = new MultipleSmallLineCharts("linechart-grid", item => item.year, item => item.percentResistant);
+    barChart.setOnHoverCallback(setHoveredAntibiotic);
+    barChart.setOnClickCallback(setSelectedAntibiotic);
+    lineChart.setOnHoverCallback(setHoveredAntibiotic);
+    lineChart.setOnClickCallback(setSelectedAntibiotic);
 
     // fill options for dropdown
     const bacteriaSelectData = Object.fromEntries([...dataset.infectionIndex.entries()] // infection -> pathogen -> antibiotic
