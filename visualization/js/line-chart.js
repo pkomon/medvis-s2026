@@ -10,7 +10,7 @@ export class LineChart {
     yAxis = undefined;
     lines = {};
 
-    constructor(containerId, xAccessor, yAccessor, desiredWidth = 200, desiredHeight = 80, title) {
+    constructor(containerId, xAccessor, yAccessor, desiredWidth = 200, desiredHeight = 80, title, indicatorVisible = false) {
         this.xAccessor = xAccessor;
         this.yAccessor = yAccessor;
 
@@ -38,6 +38,7 @@ export class LineChart {
             .attr("stroke-dasharray", "10 5")
             .attr("stroke-width", 5)
             .attr("id", "indicator");
+        this.setIndicatorVisible(indicatorVisible);
 
         // x axis
         this.xBase = d3.scaleLinear()
@@ -77,9 +78,12 @@ export class LineChart {
 
     setIndicator(value) {
         this.indicator
-            .attr("data-value", value)
             .attr("x1", this.x(value))
             .attr("x2", this.x(value));
+    }
+
+    setIndicatorVisible(visible) {
+        this.indicator.style("visibility", visible ? "visible" : "hidden");
     }
 
     updateLines() {
@@ -104,7 +108,6 @@ export class LineChart {
                 .attr("stroke", color)
                 .attr("stroke-width", 2.5);
         });
-        this.setIndicator(this.indicator.attr("data-value"));
     }
 
     addLine(name, data, color) {

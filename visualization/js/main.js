@@ -1,61 +1,73 @@
 import { fetchDataset } from "./dataset.js"
 import { BarChart } from "./bar-chart.js";
-import { LineChart, MultipleSmallLineCharts } from "./line-chart.js";
+import { MultipleSmallLineCharts } from "./line-chart.js";
 
 /**
  * Adds updates options of a HTML <select> element.
- * @param {HTMLSelectElement} selectElement the select element to update
- * @param {string[]} values the option values to use
- * @param {string[]} names the option texts to use
+ * @param {HTMLSelectElement} selectElement the <select> element to update
+ * @param {Object} data optgroups and options to create in either format
+ *    { "<label-for-opt-group>": { "values": ["opt1", ...], "names": ["Option 1", ...] }, ... }
+ *    this creates <optgroup> elements using keys of data as labels
+ *    within each optgroup, an option is created for each entry pair in its values and names (need to be same length)
+ *    names can be omitted, than values is used for names
+ * or
+ *    { "values": ["opt1", ...], "names": ["Option 1", ...] }
+ *    does not create optgroups, but directly options with values and names
  */
-function updateSelect(selectElement, values, names = undefined) {
-    //console.log(`update select ${selectElement} with values ${values} and names ${names}`);
-    if (names === undefined) {
-        names = values;
-    }
-
-    if (names.length !== values.length) {
-        throw new Error(`Error when updating <select>: received different length arrays for option names ${names} and values ${values}`);
-    }
-
-    // clear current children
+function updateSelectGroup(selectElement, data) {
+    // clear content
     selectElement.textContent = "";
 
-    if (values.length === 0) {
-        return;
+
+    let nodes = undefined;
+    if (data["values"] !== undefined && data["values"] instanceof Array) { // create options without optgroups
+        const values = data["values"];
+        const names = data["names"] || values;
+        nodes = values.map((value, index) => {
+            const optionNode = document.createElement("option");
+            optionNode.value = `${value}`;
+            optionNode.text = `${names[index]}`;
+            return optionNode;
+        });
+    } else { // create optgroups containing options
+        nodes = Object.keys(data).map(optgroupName => {
+            const optgroupNode = document.createElement("optgroup");
+            optgroupNode.label = optgroupName;
+            const values = data[optgroupName].values;
+            const names = data[optgroupName].names || values;
+            if (names.length !== values.length) {
+                throw new Error(`Error when adding <optgroup> ${optgroupName}:`
+                    `received different length arrays for option names ${names} and values ${values}`);
+            }
+            const optionNodes = values.map((value, index) => {
+                const optionNode = document.createElement("option");
+                optionNode.value = `${optgroupName}_${value}`;
+                optionNode.text = `${optgroupName} - ${names[index]}`;
+                return optionNode;
+            });
+            optgroupNode.append(...optionNodes);
+            return optgroupNode;
+        });
     }
-
-    const optionNodes = values.map((value, index) => {
-        const optionNode = document.createElement("option");
-        optionNode.value = value;
-        optionNode.textContent = names[index];
-        return optionNode;
-    });
-    selectElement.append(...optionNodes);
+    selectElement.append(...nodes);
 }
-
 
 async function main() {
     const dataset = await fetchDataset();
 
     const infectionSelect = document.getElementById("infection-select");
-    const pathogenSelect = document.getElementById("pathogen-select");
     const yearSelect = document.getElementById("year-select");
     const countrySelect = document.getElementById("country-select");
 
     const updateCharts = () => {
-        const barChartData = dataset.items
-            .filter(item => item.year === parseInt(yearSelect.value)
-                && item.infection === infectionSelect.value
-                && item.pathogen === pathogenSelect.value
-                && item.iso3 === countrySelect.value);
-        barChart.setData(barChartData);
+        const [infection, pathogen] = infectionSelect.value.split("_");
+        console.log(`Update chart, infection type=${infection}, pathogen=${pathogen}`);
 
-        //lineChart.removeAllLines();
+        // update line charts
         lineChart.removeAll();
         const lineChartData = dataset.items
-            .filter(item => item.infection === infectionSelect.value
-                && item.pathogen === pathogenSelect.value
+            .filter(item => item.infection === infection
+                && item.pathogen === pathogen
                 && item.iso3 === countrySelect.value);
         const antibiotics = new Map();
         lineChartData
@@ -66,12 +78,10 @@ async function main() {
             });
         const lineData = Object.fromEntries(antibiotics);
         lineChart.setData(lineData);
-    };
 
-    const onSelectInfection = (infection) => {
-        console.log(`Select infection type ${infection}`);
-        updateSelect(pathogenSelect, dataset.getPathogenNames(infection));
-        updateCharts();
+        // update bar chart
+        const barChartData = lineChartData.filter(item => item.year === parseInt(yearSelect.value));
+        barChart.setData(barChartData);
     };
 
     // TODO for each selection, we should update all others with available data - but this might be confusing to user?
@@ -81,24 +91,22 @@ async function main() {
     // also, now that i think about it, maybe we should use optgroup also for infection -> pathogen?
     // i think using optgroup and disabled makes the experience much better already
     // TODO make searchable (this might be annoying to do, but searching countries would be very useful)
-    const onSelectYear = (year) => updateCharts();
-    const onSelectCountry = (iso3) => updateCharts();
-    const onSelectPathogen = (pathogen) => updateCharts();
 
-    infectionSelect.addEventListener("change", (event) => onSelectInfection(event.target.value));
-    pathogenSelect.addEventListener("change", (event) => onSelectPathogen(event.target.value));
-    yearSelect.addEventListener("change", (event) => onSelectYear(event.target.value));
-    countrySelect.addEventListener("change", (event) => onSelectCountry(event.target.value));
+    infectionSelect.addEventListener("change", (event) => updateCharts());
+    yearSelect.addEventListener("change", (event) => updateCharts());
+    countrySelect.addEventListener("change", (event) => updateCharts());
 
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
     const lineChart = new MultipleSmallLineCharts("linechart-grid", item => item.year, item => item.percentResistant);
 
-    // init select options
-    updateSelect(infectionSelect, dataset.getInfectionNames());
-    updateSelect(countrySelect, [...dataset.countryMap.keys()], [...dataset.countryMap.values()]);
+    const data = Object.fromEntries([...dataset.infectionMap.entries()] // infection -> pathogen -> antibiotic
+        .map(([key, value]) => [key, { "values": [...value.keys()] }]));
+    updateSelectGroup(infectionSelect, data);
+
+    //updateSelect(infectionSelect, dataset.getInfectionNames());
+    updateSelectGroup(countrySelect, { "values": [...dataset.countryMap.keys()], "names": [...dataset.countryMap.values()] });
 
     // updating options does not trigger event, call ourselves
-    onSelectInfection(infectionSelect.value);
     updateCharts();
 }
 
