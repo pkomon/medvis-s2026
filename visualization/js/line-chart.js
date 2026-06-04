@@ -9,10 +9,12 @@ export class LineChart {
     y = undefined;
     yAxis = undefined;
     lines = {};
+    root = undefined;
 
     constructor(containerId, xAccessor, yAccessor, desiredWidth = 200, desiredHeight = 80, title, indicatorVisible = false) {
         this.xAccessor = xAccessor;
         this.yAccessor = yAccessor;
+        this.root = d3.select(`#${containerId}`);
 
         // set the dimensions and margins of the graph
         const margin = { top: 15, right: 25, bottom: 25, left: 25 };
@@ -20,7 +22,7 @@ export class LineChart {
         const height = desiredHeight - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
-        this.svg = d3.select(`#${containerId}`)
+        this.svg = this.root
             .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
@@ -91,16 +93,16 @@ export class LineChart {
             const lineObject = this.lines[name];
             const data = lineObject.data;
             const color = lineObject.color;
+            const lineId = lineObject.id;
             //const colorIndex = this.lines[name].colorIndex;
 
-            const lineName = `line-${name}`;
-            const selection = this.svg.selectAll(`.${lineName}`)
+            const selection = this.svg.selectAll(`.${lineId}`)
                 .data([data], this.xAccessor);
 
             // update the line
             selection
                 .join("path")
-                .attr("class", lineName)
+                .attr("class", `${lineId} line-series`)
                 .attr("d", d3.line()
                     .x(d => this.x(this.xAccessor(d)))
                     .y(d => this.y(this.yAccessor(d))))
@@ -111,7 +113,7 @@ export class LineChart {
     }
 
     addLine(name, data, color) {
-        this.lines[name] = { data: data, color: color };
+        this.lines[name] = { data: data, color: color, id: `line-${Object.keys(this.lines).length}` };
         this.updateLines();
     }
 
@@ -119,8 +121,9 @@ export class LineChart {
         if (this.lines[name] === undefined) {
             return;
         }
+        const lineId = this.lines[name].id;
         delete this.lines[name];
-        this.svg.selectAll(`.line-${name}`).remove();
+        this.svg.selectAll(`.${lineId}`).remove();
         this.updateLines();
     }
 
@@ -137,12 +140,51 @@ export class MultipleSmallLineCharts {
 
     /** @type {LineChart} */
     lineCharts = [];
+    highlightedName = undefined;
+    selectedName = undefined;
+    onHoverCallback = undefined;
+    onClickCallback = undefined;
 
     constructor(containerId, xAccessor, yAccessor) {
         //this.container = d3.select(`#${containerId}`);
         this.container = document.getElementById(containerId);
         this.xAccessor = xAccessor;
         this.yAccessor = yAccessor;
+    }
+
+    setOnHoverCallback(callback) {
+        this.onHoverCallback = callback;
+    }
+
+    setOnClickCallback(callback) {
+        this.onClickCallback = callback;
+    }
+
+    setHighlight(name) {
+        this.highlightedName = name;
+        this.updateStyles();
+    }
+
+    setSelection(name) {
+        this.selectedName = name;
+        this.updateStyles();
+    }
+
+    updateStyles() {
+        this.lineCharts.forEach(({ name, element }) => {
+            const activeName = this.highlightedName || this.selectedName;
+            const isHighlighted = name === this.highlightedName;
+            const isSelected = name === this.selectedName;
+            element.classList.toggle("highlighted", isHighlighted);
+            element.classList.toggle("selected", isSelected);
+            element.classList.toggle("dimmed", activeName !== undefined && name !== activeName);
+
+            const path = element.querySelector(".line-series");
+            if (path !== null) {
+                path.setAttribute("stroke", isSelected ? "#c84f31" : isHighlighted ? "#2f7fbd" : "black");
+                path.setAttribute("stroke-width", isSelected || isHighlighted ? "3.5" : "2.5");
+            }
+        });
     }
 
     /**
@@ -153,18 +195,36 @@ export class MultipleSmallLineCharts {
      * @param {Object} data 
      */
     setData(data) {
-        Object.keys(data).map(key => {
+        this.lineCharts = Object.keys(data).map((key, index) => {
             const value = data[key];
             const element = document.createElement("div");
-            element.id = `linechart-container-${key}`;
+            element.id = `linechart-container-${index}`;
+            element.className = "linechart-container";
             this.container.appendChild(element);
             const smallLineChart = new LineChart(element.id, this.xAccessor, this.yAccessor, undefined, undefined, key);
             smallLineChart.addLine(key, value, "black");
-            return smallLineChart;
+            element.addEventListener("mouseenter", () => {
+                if (this.onHoverCallback !== undefined) {
+                    this.onHoverCallback(key);
+                }
+            });
+            element.addEventListener("mouseleave", () => {
+                if (this.onHoverCallback !== undefined) {
+                    this.onHoverCallback(undefined);
+                }
+            });
+            element.addEventListener("click", () => {
+                if (this.onClickCallback !== undefined) {
+                    this.onClickCallback(key);
+                }
+            });
+            return { name: key, element, chart: smallLineChart };
         });
+        this.updateStyles();
     }
 
     removeAll() {
         this.container.textContent = "";
+        this.lineCharts = [];
     }
 }

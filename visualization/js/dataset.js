@@ -145,8 +145,8 @@ class Dataset {
      */
     initMaps() {
         this.items.forEach(item => {
-            const pathogenMap = this.infectionMap.getOrInsert(item.infection, new Map());
-            const antibioticsSet = pathogenMap.getOrInsert(item.pathogen, new Set());
+            const pathogenMap = getOrInsert(this.infectionMap, item.infection, new Map());
+            const antibioticsSet = getOrInsert(pathogenMap, item.pathogen, new Set());
             antibioticsSet.add(item.antibiotic);
 
             this.countryMap.set(item.iso3, item.countryName);
@@ -165,6 +165,13 @@ function parseCsv(text, lineSeparator = "\n", columnSeparator = ";") {
     return text.split(lineSeparator)
         .filter(line => line.length !== 0) // skip empty lines
         .map(line => line.split(columnSeparator));
+}
+
+function getOrInsert(map, key, defaultValue) {
+    if (!map.has(key)) {
+        map.set(key, defaultValue);
+    }
+    return map.get(key);
 }
 
 /**
