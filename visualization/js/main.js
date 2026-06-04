@@ -64,13 +64,6 @@ function groupBy(data, accessor) {
     return Object.fromEntries(result);
 }
 
-function getOrInsert(map, key, defaultValue) {
-    if (!map.has(key)) {
-        map.set(key, defaultValue);
-    }
-    return map.get(key);
-}
-
 function formatPercent(value) {
     if (value === undefined || Number.isNaN(value)) {
         return "n/a";
@@ -189,7 +182,6 @@ async function main() {
             .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year);
         const perLineData = groupBy(currentLineChartData, item => item.antibiotic);
         lineChart.setData(perLineData);
-
 
         // update bar chart
         currentBarChartData = currentLineChartData.filter(item => item.year === year);
