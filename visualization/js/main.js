@@ -14,7 +14,7 @@ import { MultipleSmallLineCharts } from "./line-chart.js";
  *    { "values": ["opt1", ...], "names": ["Option 1", ...] }
  *    does not create optgroups, but directly options with values and names
  */
-function updateSelectGroup(selectElement, data) {
+function updateSelectGroup(selectElement, data, compoundValues = false, compoundNames = false) {
     // clear content
     selectElement.textContent = "";
 
@@ -41,8 +41,8 @@ function updateSelectGroup(selectElement, data) {
             }
             const optionNodes = values.map((value, index) => {
                 const optionNode = document.createElement("option");
-                optionNode.value = `${optgroupName}_${value}`;
-                optionNode.text = `${optgroupName} - ${names[index]}`;
+                optionNode.value = compoundValues ? `${optgroupName}_${value}` : value;
+                optionNode.text = compoundNames ? `${optgroupName} - ${names[index]}` : names[index];
                 return optionNode;
             });
             optgroupNode.append(...optionNodes);
@@ -55,12 +55,12 @@ function updateSelectGroup(selectElement, data) {
 async function main() {
     const dataset = await fetchDataset();
 
-    const infectionSelect = document.getElementById("infection-select");
+    const bacteriaSelect = document.getElementById("bacteria-select");
     const yearSelect = document.getElementById("year-select");
     const countrySelect = document.getElementById("country-select");
 
     const updateCharts = () => {
-        const [infection, pathogen] = infectionSelect.value.split("_");
+        const [infection, pathogen] = bacteriaSelect.value.split("_");
         console.log(`Update chart, infection type=${infection}, pathogen=${pathogen}`);
 
         // update line charts
@@ -71,7 +71,7 @@ async function main() {
                 && item.iso3 === countrySelect.value);
         const antibiotics = new Map();
         lineChartData
-            .sort((a, b) => a.year < b.year)
+            .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year)
             .forEach(item => {
                 const array = antibiotics.getOrInsert(item.antibiotic, []);
                 array.push(item);
@@ -92,19 +92,27 @@ async function main() {
     // i think using optgroup and disabled makes the experience much better already
     // TODO make searchable (this might be annoying to do, but searching countries would be very useful)
 
-    infectionSelect.addEventListener("change", (event) => updateCharts());
+    bacteriaSelect.addEventListener("change", (event) => updateCharts());
     yearSelect.addEventListener("change", (event) => updateCharts());
     countrySelect.addEventListener("change", (event) => updateCharts());
 
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
     const lineChart = new MultipleSmallLineCharts("linechart-grid", item => item.year, item => item.percentResistant);
 
-    const data = Object.fromEntries([...dataset.infectionMap.entries()] // infection -> pathogen -> antibiotic
+    const bacteriaSelectData = Object.fromEntries([...dataset.infectionIndex.entries()] // infection -> pathogen -> antibiotic
         .map(([key, value]) => [key, { "values": [...value.keys()] }]));
-    updateSelectGroup(infectionSelect, data);
+    updateSelectGroup(bacteriaSelect, bacteriaSelectData, true, true);
 
-    //updateSelect(infectionSelect, dataset.getInfectionNames());
-    updateSelectGroup(countrySelect, { "values": [...dataset.countryMap.keys()], "names": [...dataset.countryMap.values()] });
+    const countrySelectData = Object.fromEntries([...dataset.regionIndex.entries()]
+        .map(([regionName, isoCodeSet]) => {
+            const values = [...isoCodeSet.keys()];
+            const names = values.map(code => dataset.countryIndex.get(code));
+            return [regionName, { "values": values, "names": names }];
+        }));
+    console.log(countrySelectData);
+
+    updateSelectGroup(countrySelect, countrySelectData);
+    //updateSelectGroup(countrySelect, { "values": [...dataset.countryIndex.keys()], "names": [...dataset.countryIndex.values()] });
 
     // updating options does not trigger event, call ourselves
     updateCharts();
