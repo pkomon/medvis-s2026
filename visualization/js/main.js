@@ -84,6 +84,7 @@ async function main() {
     const bacteriaSelect = document.getElementById("bacteria-select");
     const yearSelect = document.getElementById("year-select");
     const countrySelect = document.getElementById("country-select");
+    const regionSelect = document.getElementById("region-select");
     const detailContent = document.getElementById("detail-content");
 
     let currentLineChartData = [];
@@ -171,6 +172,7 @@ async function main() {
         const [infection, pathogen] = bacteriaSelect.value.split("_");
         const year = parseInt(yearSelect.value);
         const country = countrySelect.value;
+        const regionName = regionSelect.value;
         console.log(`Update chart, infection type=${infection}, pathogen=${pathogen}`);
 
         // update line charts
@@ -192,11 +194,12 @@ async function main() {
         updateLinkedState();
 
         // update boxplot
-        //TODO dont hardcore global data, use region select
+        const isGlobalRegion = regionName === "Global";
         const boxPlotData = dataset.items
             .filter(item => item.infection === infection
                 && item.pathogen === pathogen
-                && item.year === year);
+                && item.year === year
+                && (isGlobalRegion || item.whoRegionName === regionName));
         const perBoxData = groupBy(boxPlotData, item => item.antibiotic);
         boxPlot.setData(perBoxData);
     };
@@ -212,12 +215,13 @@ async function main() {
     bacteriaSelect.addEventListener("change", (event) => updateCharts());
     yearSelect.addEventListener("change", (event) => updateCharts());
     countrySelect.addEventListener("change", (event) => updateCharts());
+    regionSelect.addEventListener("change", (event) => updateCharts());
 
     document.getElementById("area-mode-select").addEventListener("change", (event) => {
         updateCharts();
         const isCountryMode = event.target.value === "Country";
-        document.getElementById("barchart-container").hidden = !isCountryMode;
-        document.getElementById("boxplot-container").hidden = isCountryMode;
+        document.querySelectorAll(".country-mode").forEach((element) => element.hidden = !isCountryMode);
+        document.querySelectorAll(".region-mode").forEach((element) => element.hidden = isCountryMode);
     });
 
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
@@ -232,7 +236,6 @@ async function main() {
     const bacteriaSelectData = Object.fromEntries([...dataset.infectionIndex.entries()] // infection -> pathogen -> antibiotic
         .map(([key, value]) => [key, { "values": [...value.keys()] }]));
     updateSelectGroup(bacteriaSelect, bacteriaSelectData, true, true);
-
     const countrySelectData = Object.fromEntries([...dataset.regionIndex.entries()]
         .map(([regionName, isoCodeSet]) => {
             const values = [...isoCodeSet.keys()];
@@ -240,6 +243,7 @@ async function main() {
             return [regionName, { "values": values, "names": names }];
         }));
     updateSelectGroup(countrySelect, countrySelectData);
+    updateSelectGroup(regionSelect, { "values": ["Global", ...dataset.regionIndex.keys()] });
 
     // updating options does not trigger event, call ourselves
     updateCharts();

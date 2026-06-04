@@ -41,8 +41,10 @@
           <option value="2023" selected>2023</option>
         </select>
       </div>
-      <div><label for="country-select">Country</label></div>
-      <div><select id="country-select"></select></div>
+      <div class="country-mode"><label for="country-select">Country</label></div>
+      <div class="country-mode"><select id="country-select"></select></div>
+      <div class="region-mode" hidden><label for="region-select">Region</label></div>
+      <div class="region-mode" hidden><select id="region-select"></select></div>
     </div>
 
     <section id="detail-panel" class="detail-panel" aria-live="polite">
@@ -53,17 +55,17 @@
     </section>
 
     <div id="charts">
-      <div id="barchart-container">
+      <div class="country-mode">
         <h2>Antibiotics ranked by reported resistance</h2>
         <div id="barchart"></div>
       </div>
-      <div id="boxplot-container" hidden>
+      <div hidden>
         <h2>Boxplot</h2>
-        <div id="boxplot"></div>
+        <div class="region-mode" id="boxplot"></div>
       </div>
       <div>
         <h2>Resistance trend over time per antibiotic</h2>
-        <div id="linechart-grid"></div>
+        <div id="linechart-grid" class="small-multiples-grid"></div>
       </div>
     </div>
   </main>
