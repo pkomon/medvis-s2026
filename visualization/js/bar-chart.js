@@ -51,11 +51,10 @@ export class BarChart {
         this.onClickCallback = callback;
     }
 
-    setData(data) {
-        // filter out 0 values and sort data descending
-        data = data
-            .filter(d => this.valueAccessor(d) > 0)
-            .sort((a, b) => this.valueAccessor(a) < this.valueAccessor(b));
+    setData(data, sortBarsByValue = true) {
+        if (sortBarsByValue) {
+            data = data.sort((a, b) => this.valueAccessor(a) < this.valueAccessor(b));
+        }
 
         // update x axis
         const maxX = d3.max(data, this.valueAccessor)

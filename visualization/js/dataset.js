@@ -97,17 +97,24 @@ class Dataset {
      * (infection (Map) -> pathogen (Map) -> antibiotics (Set))
      * @type {Map<string, Map<string, Set>>}
      */
-    infectionMap = new Map();
+    infectionIndex = new Map();
+
+    /**
+     * Map of WHO region name to ISO3 codes.
+     * @type {Map<string, string>}
+     */
+    regionIndex = new Map();
+
 
     /**
      * Map of country ISO3 codes to country names.
      * @type {Map<string, string>}
      */
-    countryMap = new Map();
+    countryIndex = new Map();
 
     constructor(items) {
         this.items = items;
-        this.initMaps();
+        this.initIndices();
     }
 
     /**
@@ -124,33 +131,31 @@ class Dataset {
     }
 
     /**
-     * 
-     * @returns {Array<string>} unique infection names
+     * Populates helper mappings {@link infectionIndex}, {@link countryIndex}, {@link regionIndex}
      */
-    getInfectionNames() {
-        return new Array(...this.infectionMap.keys());
-    }
-
-    /**
-     * Returns unique pathogen names for specific infection.
-     * @param {string} infectionName name of infection
-     * @return {Map<string>} unique pathogen names
-     */
-    getPathogenNames(infectionName) {
-        return new Array(...this.infectionMap.get(infectionName).keys());
-    }
-
-    /**
-     * Populates helper mappings {@link infectionMap} and {@link countryMap}
-     */
-    initMaps() {
+    initIndices() {
         this.items.forEach(item => {
-            const pathogenMap = this.infectionMap.getOrInsert(item.infection, new Map());
-            const antibioticsSet = pathogenMap.getOrInsert(item.pathogen, new Set());
+            const pathogenIndex = this.infectionIndex.getOrInsert(item.infection, new Map());
+            const antibioticsSet = pathogenIndex.getOrInsert(item.pathogen, new Set());
             antibioticsSet.add(item.antibiotic);
 
-            this.countryMap.set(item.iso3, item.countryName);
+            const regionSet = this.regionIndex.getOrInsert(item.whoRegionName, new Set());
+            regionSet.add(item.iso3);
+
+            this.countryIndex.set(item.iso3, item.countryName);
         });
+
+        //sort by region name and country name
+        this.regionIndex = new Map([...this.regionIndex.entries()]
+            .sort(([regionName1, _], [regionName2, __]) => regionName1 > regionName2)
+            .map(([whoRegionName, isoCodeSet]) => [
+                whoRegionName,
+                new Set([...isoCodeSet.keys()]
+                    .map(isoCode => [isoCode, this.countryIndex.get(isoCode)])
+                    .sort(([_, countryName1], [__, countryName2]) => countryName1 > countryName2)
+                    .map(([isoCode, _], __) => isoCode))
+            ]));
+        console.log(this.regionIndex);
     }
 }
 
