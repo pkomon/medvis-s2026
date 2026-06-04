@@ -1,7 +1,20 @@
 import pandas as pd
 import os
 from pathlib import Path
+import re
+
 import constants
+
+# helper for unicode code-point replacement was generated using LLM, manually adapted
+pattern = re.compile(r"<U\+([0-9A-Fa-f]+)>")
+
+def decode_unicode_markers(value):
+    if isinstance(value, str):
+        return pattern.sub(
+            lambda m: chr(int(m.group(1), 16)),
+            value
+        )
+    return value
 
 def read_and_concat_files(input_dir_path: Path, output_file_path: Path) -> pd.DataFrame:
     file_paths = [input_dir_path / path for path in os.listdir(input_dir_path) if os.path.isfile(input_dir_path / path)]
@@ -19,6 +32,7 @@ def read_and_concat_files(input_dir_path: Path, output_file_path: Path) -> pd.Da
 
             # parse csv
             df = pd.read_csv(file)
+            df = df.map(decode_unicode_markers)
 
             # add year column
             year = file_path.name.split("_")[0]
@@ -32,7 +46,7 @@ def read_and_concat_files(input_dir_path: Path, output_file_path: Path) -> pd.Da
 
     print("Writing output file...")
     # use ";"" as separator because some country names include "," and that way we avoid quoting
-    merged_df.to_csv(output_file_path, index=False, sep=";", lineterminator="\n")
+    merged_df.to_csv(output_file_path, index=False, sep=";", lineterminator="\n", encoding="utf-8-sig")
     print("Done.")
 
 if __name__ == "__main__":
