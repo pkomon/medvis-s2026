@@ -52,13 +52,6 @@ function updateSelectGroup(selectElement, data) {
     selectElement.append(...nodes);
 }
 
-function getOrInsert(map, key, defaultValue) {
-    if (!map.has(key)) {
-        map.set(key, defaultValue);
-    }
-    return map.get(key);
-}
-
 function formatPercent(value) {
     if (value === undefined || Number.isNaN(value)) {
         return "n/a";
@@ -176,7 +169,7 @@ async function main() {
         currentLineChartData
             .sort((a, b) => a.year - b.year)
             .forEach(item => {
-                const array = getOrInsert(antibiotics, item.antibiotic, []);
+                const array = antibiotics.getOrInsert(item.antibiotic, []);
                 array.push(item);
             });
         const lineData = Object.fromEntries(antibiotics);
