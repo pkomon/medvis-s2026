@@ -43,12 +43,27 @@ export class BarChart {
         this.svg.append("g")
             .attr("class", "myYAxis");
 
+        // y axis label
+        this.svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("x", - this.height / 2)
+            .attr("y", -margin.left + 20)
+            .attr("transform", "rotate(-90)")
+            .text("Antibiotic");
+
         // x axis
         this.x = d3.scaleLinear()
             .range([0, this.width]);
         this.xAxis = d3.axisTop().scale(this.x);
         this.svg.append("g")
             .attr("class", "myXAxis");
+
+        // x axis label
+        this.svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("x", this.width / 2)
+            .attr("y", -margin.top + 10)
+            .text("Resistance (%)");
     }
 
     setOnClickCallback(callback) {
