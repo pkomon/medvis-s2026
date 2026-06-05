@@ -31,9 +31,9 @@ export class BoxPlot {
         this.valueAccessor = valueAccessor;
 
         // set the dimensions and margins of the graph
-        this.margin = { top: 30, right: 30, bottom: 0, left: 100 };
-        this.width = 800 - this.margin.left - this.margin.right;
-        this.height = 600 - this.margin.top - this.margin.bottom;
+        const margin = { top: 50, right: 50, bottom: 0, left: 120 };
+        this.width = 800 - margin.left - margin.right;
+        this.height = 600 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
         this.svg = d3.select(`#${containerId}`)
@@ -76,7 +76,7 @@ export class BoxPlot {
         this.svg.append("text")
             .attr("text-anchor", "middle")
             .attr("x", this.width / 2)
-            .attr("y", -this.margin.top + 10)
+            .attr("y", -margin.top + 20)
             .text("Resistance");
     }
 
@@ -179,7 +179,7 @@ export class BoxPlot {
             .attr("width", ([_, item]) => this.x(item.q3 - item.q1))
             .attr("y", ([groupName, _]) => this.y(groupName))
             .attr("height", this.y.bandwidth())
-            .attr("fill", "lightgrey")
+            .attr("fill", "#69b3a2")
             .attr("stroke", "black")
             .attr("stroke-width", 1);
         boxGroups.selectAll(".medianLine")

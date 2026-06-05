@@ -21,7 +21,7 @@ export class BarChart {
         this.valueAccessor = valueAccessor;
 
         // set the dimensions and margins of the graph
-        const margin = { top: 30, right: 30, bottom: 0, left: 100 };
+        const margin = { top: 50, right: 50, bottom: 0, left: 120 };
         this.width = 800 - margin.left - margin.right;
         this.height = 500 - margin.top - margin.bottom;
 
@@ -64,7 +64,7 @@ export class BarChart {
         this.svg.append("text")
             .attr("text-anchor", "middle")
             .attr("x", this.width / 2)
-            .attr("y", -margin.top + 10)
+            .attr("y", -margin.top + 20)
             .text("Resistance");
     }
 
