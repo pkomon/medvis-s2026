@@ -358,25 +358,38 @@ async function main() {
     // updating options does not trigger event, call ourselves
     updateCharts();
 
+
     boxPlot.setOnMouseEnter((mode, dataItem, element, event) => {
+        console.log("Mouse enter event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             const [antibioticName, item] = dataItem;
-            lineChartRegions.setHighlight(antibioticName);
             showDataItemTooltip(event, item, `${antibioticName} (${item.countryName})`);
             d3.select(element)
                 .transition()
                 .duration(100)
                 .attr("fill", "red");
+        } else if (mode === "group") {
+            lineChartRegions.setHighlight(dataItem);
+            d3.select(element)
+                .transition()
+                .duration(100)
+                .attr("fill", "#fff9c4")
         }
     });
     boxPlot.setOnMouseLeave((mode, dataItem, element, event) => {
+        console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
-            lineChartRegions.setHighlight(undefined);
             hideTooltip();
             d3.select(element)
                 .transition()
                 .duration(100)
                 .attr("fill", "black");
+        } else if (mode === "group") {
+            lineChartRegions.setHighlight(undefined);
+            d3.select(element)
+                .transition()
+                .duration(100)
+                .attr("fill", "transparent");
         }
     });
 }
