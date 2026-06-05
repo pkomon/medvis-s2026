@@ -63,6 +63,16 @@ class DataItem {
      */
     percentResistant = undefined;
 
+    equalsId(other) {
+        return other !== undefined
+            && other instanceof DataItem
+            && this.year === other.year
+            && this.infection === other.infection
+            && this.pathogen === other.pathogen
+            && this.antibiotic === other.antibiotic
+            && this.iso3 === other.iso3;
+    }
+
     /**
      * Creates a new data item for a given row of a CSV file.
      * The order of columns is hardcoded here.

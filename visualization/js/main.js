@@ -97,6 +97,7 @@ async function main() {
     let currentBarChartData = [];
     let hoveredAntibiotic = undefined;
     let selectedAntibiotic = undefined;
+    let hoveredItem = undefined;
     let currentSelectedItem = undefined;
 
     const getActiveAntibiotic = () => hoveredAntibiotic || selectedAntibiotic;
@@ -198,7 +199,8 @@ async function main() {
 
     const updateLinkedState = () => {
         const activeAntibiotic = getActiveAntibiotic();
-        barChart.setHighlight(hoveredAntibiotic);
+        barChart.setHighlightRow(hoveredAntibiotic);
+        barChart.setHighlightItem(hoveredItem);
         barChart.setSelection(selectedAntibiotic);
         lineChart.setHighlight(hoveredAntibiotic);
         lineChart.setSelection(selectedAntibiotic);
@@ -208,6 +210,7 @@ async function main() {
 
     const setHoveredAntibiotic = (antibioticName, event, item) => {
         hoveredAntibiotic = antibioticName;
+        hoveredItem = antibioticName === undefined ? undefined : item;
         updateLinkedState();
         if (antibioticName !== undefined && item !== undefined && event !== undefined) {
             showDataItemTooltip(event, item);
@@ -337,8 +340,11 @@ async function main() {
     const lineChart = new MultipleSmallLineCharts("linechart-grid", item => item.year, item => item.percentResistant);
     const lineChartRegions = new MultipleSmallLineCharts("region-linechart-grid",
         item => item.year, item => item.percentResistant, item => item);
-    barChart.setOnHoverCallback(setHoveredAntibiotic);
-    barChart.setOnClickCallback(setSelectedAntibiotic);
+    barChart.setOnHoverItemCallback(setHoveredAntibiotic);
+    barChart.setOnClickItemCallback(setSelectedAntibiotic);
+    barChart.setOnHoverRowCallback((antibioticName) => {
+        barChart.setHighlightRow(antibioticName);
+    });
     lineChart.setOnHoverCallback(setHoveredAntibiotic);
     lineChart.setOnClickCallback(setSelectedAntibiotic);
     lineChart.setOnPointHoverCallback((antibioticName, seriesName, event, item) => {

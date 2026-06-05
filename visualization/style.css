@@ -120,6 +120,16 @@ h2 {
     opacity: 1;
 }
 
+.bar-row-bg {
+    fill: transparent;
+    stroke: none;
+}
+
+.bar-row-bg.highlighted {
+    fill: #fff9c4;
+    transition: fill 100ms ease, opacity 100ms ease;
+}
+
 .linechart-container {
     border: 1px solid transparent;
     border-radius: 6px;
@@ -200,7 +210,7 @@ h2 {
 
 .boxplot-row-bg.highlighted {
     fill: #fff9c4;
-transition: fill 100ms ease, opacity 100ms ease;
+    transition: fill 100ms ease, opacity 100ms ease;
 }
 
 .boxplot-data-item {
@@ -209,13 +219,16 @@ transition: fill 100ms ease, opacity 100ms ease;
 }
 
 .boxplot-data-item.highlighted {
-    fill: orange; /*TODO better color*/
+    /*TODO better color*/
+    fill: orange;
 }
 
 .boxplot-data-item.highlighted-hovered {
-    fill: #2f7fbd; /*TODO better color*/
+    /*TODO better color*/
+    fill: #2f7fbd;
 }
 
 .boxplot-data-item.highlighted-selected {
-    fill: #c84f31; /*TODO better color*/
+    /*TODO better color*/
+    fill: #c84f31;
 }

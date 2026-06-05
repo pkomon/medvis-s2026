@@ -3,18 +3,22 @@ import { callIfDefined } from "./util.js";
 
 export class BarChart {
     svg = undefined;
+    hoverGroups = undefined;
     content = undefined;
     width = undefined;
     height = undefined;
+    margin = undefined;
     x = undefined;
     xAxis = undefined;
     y = undefined;
     yAxis = undefined;
     nameAccessor = undefined;
     valueAccessor = undefined;
-    onHoverCallback = undefined;
-    onClickCallback = undefined;
+    onHoverItemCallback = undefined;
+    onHoverRowCallback = undefined;
+    onClickItemCallback = undefined;
     highlightedName = undefined;
+    highlightedItem = undefined;
     selectedName = undefined;
 
     constructor(containerId, nameAccessor, valueAccessor) {
@@ -22,18 +26,19 @@ export class BarChart {
         this.valueAccessor = valueAccessor;
 
         // set the dimensions and margins of the graph
-        const margin = { top: 50, right: 50, bottom: 0, left: 120 };
-        this.width = 800 - margin.left - margin.right;
-        this.height = 500 - margin.top - margin.bottom;
+        this.margin = { top: 50, right: 50, bottom: 0, left: 120 };
+        this.width = 800 - this.margin.left - this.margin.right;
+        this.height = 500 - this.margin.top - this.margin.bottom;
 
         // append the svg object to the body of the page
         this.svg = d3.select(`#${containerId}`)
             .append("svg")
-            .attr("width", this.width + margin.left + margin.right)
-            .attr("height", this.height + margin.top + margin.bottom)
+            .attr("width", this.width + this.margin.left + this.margin.right)
+            .attr("height", this.height + this.margin.top + this.margin.bottom)
             .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
+            .attr("transform", `translate(${this.margin.left},${this.margin.top})`);
 
+        this.hoverGroups = this.svg.append("g");
         this.content = this.svg.append("g");
 
         // y axis
@@ -48,7 +53,7 @@ export class BarChart {
         this.svg.append("text")
             .attr("text-anchor", "middle")
             .attr("x", - this.height / 2)
-            .attr("y", -margin.left + 20)
+            .attr("y", -this.margin.left + 20)
             .attr("transform", "rotate(-90)")
             .text("Antibiotic");
 
@@ -65,20 +70,29 @@ export class BarChart {
         this.svg.append("text")
             .attr("text-anchor", "middle")
             .attr("x", this.width / 2)
-            .attr("y", -margin.top + 20)
+            .attr("y", -this.margin.top + 20)
             .text("Resistance");
     }
 
-    setOnClickCallback(callback) {
-        this.onClickCallback = callback;
+    setOnClickItemCallback(callback) {
+        this.onClickItemCallback = callback;
     }
 
-    setOnHoverCallback(callback) {
-        this.onHoverCallback = callback;
+    setOnHoverItemCallback(callback) {
+        this.onHoverItemCallback = callback;
     }
 
-    setHighlight(name) {
+    setOnHoverRowCallback(callback) {
+        this.onHoverRowCallback = callback;
+    }
+
+    setHighlightRow(name) {
         this.highlightedName = name;
+        this.updateStyles();
+    }
+
+    setHighlightItem(item) {
+        this.highlightedItem = item;
         this.updateStyles();
     }
 
@@ -88,8 +102,13 @@ export class BarChart {
     }
 
     updateStyles() {
+        // update row background
+        this.hoverGroups.selectAll(".bar-row-bg")
+            .classed("highlighted", d => this.nameAccessor(d) === this.highlightedName);
+
+        // update bar background
         this.content.selectAll("rect")
-            .classed("highlighted", d => this.nameAccessor(d) === this.highlightedName)
+            .classed("highlighted", d => d.equalsId(this.highlightedItem))
             .classed("selected", d => this.nameAccessor(d) === this.selectedName)
             .classed("dimmed", d => {
                 const activeName = this.highlightedName || this.selectedName;
@@ -115,6 +134,19 @@ export class BarChart {
             .attr("transform", "translate(-4,0)")
             .style("text-anchor", "end");
 
+        // add row background (for hover effect)
+        this.hoverGroups.selectAll(".bar-row-bg")
+            .data(data, this.nameAccessor)
+            .join("rect")
+            .attr("class", "bar-row-bg")
+            .attr("x", -this.margin.left)
+            .attr("y", d => this.y(this.nameAccessor(d)) - this.y.padding() * this.y.bandwidth() * 0.5)
+            .attr("width", this.width + this.margin.left + this.margin.right - 10)
+            .attr("height", this.y.step())
+            .on("mouseenter", (event, d) => callIfDefined(this.onHoverRowCallback, this.nameAccessor(d), event, d))
+            .on("mousemove", (event, d) => callIfDefined(this.onHoverRowCallback, this.nameAccessor(d), event, d))
+            .on("mouseleave", (event, d) => callIfDefined(this.onHoverRowCallback, undefined, event, d));
+
         // update bars
         this.content.selectAll("rect")
             .data(data)
@@ -125,10 +157,10 @@ export class BarChart {
             .attr("height", this.y.bandwidth())
             .attr("fill", "#69b3a2")
             .attr("class", "bar")
-            .on("mouseenter", (event, d) => callIfDefined(this.onHoverCallback, this.nameAccessor(d), event, d))
-            .on("mousemove", (event, d) => callIfDefined(this.onHoverCallback, this.nameAccessor(d), event, d))
-            .on("mouseleave", (event, d) => callIfDefined(this.onHoverCallback, undefined, event, d))
-            .on("click", (event, d) => callIfDefined(this.onClickCallback, this.nameAccessor(d), event, d));
+            .on("mouseenter", (event, d) => callIfDefined(this.onHoverItemCallback, this.nameAccessor(d), event, d))
+            .on("mousemove", (event, d) => callIfDefined(this.onHoverItemCallback, this.nameAccessor(d), event, d))
+            .on("mouseleave", (event, d) => callIfDefined(this.onHoverItemCallback, undefined, event, d))
+            .on("click", (event, d) => callIfDefined(this.onClickItemCallback, this.nameAccessor(d), event, d));
         this.updateStyles();
     }
 }
