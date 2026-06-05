@@ -171,7 +171,6 @@ async function main() {
                     <span class="detail-label" title="Higher rank means higher susceptibility against bacteria in year in country compared to other antibiotics."
                         style="
                             cursor: help;
-                            color: #0d6efd;
                             text-decoration: underline dotted;
                             text-underline-offset: 2px;
                         ">Rank</span>
