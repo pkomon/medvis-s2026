@@ -334,11 +334,7 @@ export class MultipleSmallLineCharts {
             element.className = "linechart-container";
             this.container.appendChild(element);
             const smallLineChart = new LineChart(element.id, this.xAccessor, this.yAccessor, this.yAccessorUncertain, undefined, undefined, key);
-            smallLineChart.setOnPointHoverCallback((seriesName, event, item) => {
-                if (this.onPointHoverCallback !== undefined) {
-                    this.onPointHoverCallback(key, seriesName, event, item);
-                }
-            });
+            smallLineChart.setOnPointHoverCallback((seriesName, event, item) => callIfDefined(this.onPointHoverCallback, key, seriesName, event, item));
             const series = object.series || [{ name: key, type: object.type, data: object.data, color: "black" }];
             series.forEach(item => smallLineChart.add(item.name, item.type, item.data, item.color || "black"));
             element.addEventListener("mouseenter", () => callIfDefined(this.onHoverCallback, key));
