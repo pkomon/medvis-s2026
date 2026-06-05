@@ -136,13 +136,15 @@ h2 {
 }
 
 .bar.highlighted {
-    stroke: #2f7fbd;
-    stroke-width: 2.5;
+    fill: #2f7fbd;
+    /*stroke: #2f7fbd;*/
+    /*stroke-width: 2.5;*/
 }
 
 .bar.selected {
-    stroke: #c84f31;
-    stroke-width: 3;
+    fill: #c84f31;
+    /*stroke: #c84f31;*/
+    /*stroke-width: 3;*/
     opacity: 1;
 }
 
@@ -219,7 +221,7 @@ h2 {
 }
 
 .line-point {
-    fill: white;
+    /*fill: white;*/
     cursor: crosshair;
 }
 

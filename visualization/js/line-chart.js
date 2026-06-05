@@ -172,7 +172,6 @@ export class LineChart {
                     .attr("r", 5)
                     .attr("cx", d => this.x(this.xAccessor(d)))
                     .attr("cy", d => this.y(this.yAccessorLine(d)))
-                    .attr("fill", "white")
                     .attr("stroke", color)
                     .attr("stroke-width", 2.5)
                     .style("pointer-events", "all")
@@ -232,7 +231,7 @@ export class LineChart {
             const points = this.linesContainer.selectAll(`.${line.id}-point`)
                 .classed("highlighted", d => d.equalsId(highlightedItem))
                 .classed("selected", d => d.equalsId(selectedItem))
-                .attr("r", d => d.equalsId(highlightedItem) || d.equalsId(selectedItem) ? 7 : 5)
+                .attr("fill", d => d.equalsId(selectedItem) ? "#c84f31" : d.equalsId(highlightedItem) ? "#2f7fbd" : "white")
                 .attr("stroke", d => d.equalsId(selectedItem) ? "#c84f31" : d.equalsId(highlightedItem) ? "#2f7fbd" : line.color)
                 .attr("stroke-width", d => d.equalsId(highlightedItem) || d.equalsId(selectedItem) ? 3.5 : 2.5);
             points.filter(d => d.equalsId(highlightedItem) || d.equalsId(selectedItem)).raise();

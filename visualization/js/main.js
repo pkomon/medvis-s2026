@@ -372,6 +372,8 @@ async function main() {
     updateSelectGroup(regionSelect, { "values": ["Global", ...dataset.regionIndex.keys()] });
 
     // updating options does not trigger event, call ourselves
+    bacteriaSelect.value = "Bloodstream_Escherichia coli";
+    countrySelect.value = "ITA";
     updateCharts();
 
 
