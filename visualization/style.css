@@ -190,3 +190,12 @@ h2 {
     fill: white;
     cursor: crosshair;
 }
+
+.boxplot-data-item {
+    fill: black;
+    stroke: none;
+}
+
+.boxplot-data-item.highlighted {
+    fill: orange; /*TODO better color*/
+}

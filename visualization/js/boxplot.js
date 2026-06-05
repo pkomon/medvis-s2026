@@ -25,6 +25,7 @@ export class BoxPlot {
     onMouseEnterCallback = undefined;
 
     summaryPerGroup = undefined;
+    highlightedCountryCodes = {};
 
     constructor(containerId, nameAccessor, valueAccessor) {
         this.nameAccessor = nameAccessor;
@@ -110,9 +111,29 @@ export class BoxPlot {
         this.onMouseLeaveCallback = callback;
     }
 
+    highlightItemsForCountry(countryCode) {
+        console.log(countryCode);
+        this.svg.selectAll(`.boxplot-data-item-${countryCode}`)
+            .classed("highlighted", true);
+        highlightedCountryCodes[countryCode] = true;
+    }
+
+    clearHighlight(countryCode) {
+        this.svg.selectAll(`.boxplot-data-item-${countryCode}`)
+            .classed("highlighted", true);
+        delete this.highlightedCountryCodes[countryCode];
+    }
+
+    toggleHighlightForCountry(countryCode) {
+        this.highlightedCountryCodes[countryCode] = !this.highlightedCountryCodes[countryCode];
+        this.svg.selectAll(`.boxplot-data-item-${countryCode}`)
+            .classed("highlighted", this.highlightedCountryCodes[countryCode]);
+    }
+
     setData(data, showDots = true) {
         // data format:
         // {"<box name>": [item1, item2, ...]}
+        this.data = data;
 
         // compute summary statistics per group
         const summaryPerGroup = Object.entries(data)
@@ -200,17 +221,16 @@ export class BoxPlot {
             .join("g")
             .attr("class", "points-group");
         const jitter = this.y.bandwidth() * 0.45;
-        pointGroups.selectAll(".boxplot-data-items")
+        pointGroups.selectAll(".boxplot-data-item")
             .data(([groupName, _]) => data[groupName].map(item => [groupName, item]))
             .join("circle")
-            .attr("class", "boxplot-data-items")
+            .attr("class", d => `boxplot-data-item boxplot-data-item-${d[1].iso3}`) // hacky, but oh well
             .attr("r", 3)
             .attr("cx", ([_, item]) => this.x(this.valueAccessor(item)))
             .attr("cy", ([groupName, _]) => this.y(groupName) + this.y.bandwidth() / 2 + (Math.random() - 0.5) * jitter)
-            .attr("fill", "black")
             .style("visibility", showDots ? "visible" : "hidden")
-            .on("mouseenter", (event, d) => callIfDefined(this.onMouseEnterCallback, "item", d, event.target, event))
-            .on("mouseleave", (event, d) => callIfDefined(this.onMouseLeaveCallback, "item", d, event.target, event))
-            .on("click", (event, d) => callIfDefined(this.onClickCallback, "item", d, event.target, event));
+            .on("mouseenter", (event, d) => callIfDefined(this.onMouseEnterCallback, "item", d[1], event.target, event))
+            .on("mouseleave", (event, d) => callIfDefined(this.onMouseLeaveCallback, "item", d[1], event.target, event))
+            .on("click", (event, d) => callIfDefined(this.onClickCallback, "item", d[1], event.target, event));
     }
 }

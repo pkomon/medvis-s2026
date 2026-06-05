@@ -338,6 +338,12 @@ async function main() {
         lineChart.setGuide(item.year, item.percentResistant);
         showDataItemTooltip(event, item, `${antibioticName} (${seriesName})`);
     });
+    boxPlot.setOnClickCallback((type, item, element, event) => {
+        if (type === "item") {
+            console.log(item);
+            boxPlot.toggleHighlightForCountry(item.iso3);
+        }
+    });
 
     // fill options for dropdown
     const bacteriaSelectData = Object.fromEntries([...dataset.infectionIndex.entries()] // infection -> pathogen -> antibiotic
@@ -360,10 +366,9 @@ async function main() {
 
 
     boxPlot.setOnMouseEnter((mode, dataItem, element, event) => {
-        console.log("Mouse enter event for boxplot: ", mode, dataItem, element);
+        //console.log("Mouse enter event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
-            const [antibioticName, item] = dataItem;
-            showDataItemTooltip(event, item, `${antibioticName} (${item.countryName})`);
+            showDataItemTooltip(event, dataItem, `${dataItem.antibiotic} (${dataItem.countryName})`);
             d3.select(element)
                 .transition()
                 .duration(100)
@@ -377,7 +382,7 @@ async function main() {
         }
     });
     boxPlot.setOnMouseLeave((mode, dataItem, element, event) => {
-        console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
+        //console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             hideTooltip();
             d3.select(element)
