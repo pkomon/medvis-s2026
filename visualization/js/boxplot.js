@@ -1,6 +1,12 @@
 import * as d3 from "d3";;
 import { computeSummary } from "./util.js";
 
+function callIfDefined(callback, ...args) {
+    if (callback !== undefined) {
+        callback(...args);
+    }
+}
+
 export class BoxPlot {
 
     svg = undefined;
@@ -25,20 +31,20 @@ export class BoxPlot {
         this.valueAccessor = valueAccessor;
 
         // set the dimensions and margins of the graph
-        const margin = { top: 30, right: 30, bottom: 0, left: 100 };
-        this.width = 800 - margin.left - margin.right;
-        this.height = 600 - margin.top - margin.bottom;
+        this.margin = { top: 30, right: 30, bottom: 0, left: 100 };
+        this.width = 800 - this.margin.left - this.margin.right;
+        this.height = 600 - this.margin.top - this.margin.bottom;
 
         // append the svg object to the body of the page
         this.svg = d3.select(`#${containerId}`)
             .append("svg")
-            .attr("width", this.width + margin.left + margin.right)
-            .attr("height", this.height + margin.top + margin.bottom)
+            .attr("width", this.width + this.margin.left + this.margin.right)
+            .attr("height", this.height + this.margin.top + this.margin.bottom)
             .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
+            .attr("transform", `translate(${this.margin.left},${this.margin.top})`);
 
-        this.boxes = this.svg.append("g");
-        this.points = this.svg.append("g");
+        this.hoverGroups = this.svg.append("g");
+        this.boxes = this.svg.append("g")
 
         // y axis
         this.y = d3.scaleBand()
@@ -53,7 +59,7 @@ export class BoxPlot {
         this.svg.append("text")
             .attr("text-anchor", "middle")
             .attr("x", - this.height / 2)
-            .attr("y", -margin.left + 20)
+            .attr("y", -this.margin.left + 20)
             .attr("transform", "rotate(-90)")
             .text("Antibiotic");
 
@@ -65,24 +71,13 @@ export class BoxPlot {
             .tickFormat(d => `${d}%`);
         this.svg.append("g")
             .attr("class", "myXAxis");
-        
+
         // x axis label
         this.svg.append("text")
             .attr("text-anchor", "middle")
             .attr("x", this.width / 2)
-            .attr("y", -margin.top + 10)
+            .attr("y", -this.margin.top + 10)
             .text("Resistance");
-    }
-
-    callCallback(event, dataItem) {
-        //console.log(event, dataItem);
-        if (event.type === "mouseenter" && this.onMouseEnterCallback !== undefined) {
-            this.onMouseEnterCallback("item", dataItem, event.target, event);
-        } else if (event.type === "mouseleave" && this.onMouseLeaveCallback !== undefined) {
-            this.onMouseLeaveCallback("item", dataItem, event.target, event);
-        } else if (event.type === "click" && this.onClickCallback !== undefined) {
-            this.onClickCallback("item", dataItem, event.target, event);
-        }
     }
 
     setOnClickCallback(callback) {
@@ -90,16 +85,26 @@ export class BoxPlot {
     }
 
     /**
-     * 
-     * @param {function(string, any, SVGElement)} callback 
+     * Registers callback for when mouse enters an element of the chart.
+     * Callbacks are fired when entering single data items,
+     * but also when entering the section for a specific group (single boxplot)
+     * @param {function(string, any, SVGElement)} callback the callback to registers, parameters are
+     *   type: string, string, which can be either "item" or "group"
+     *   data: any, for type "item", the data item hovered, for "group" the name of "group" as string
+     *   element: SVGElement, the element of the chart that is being hovered
      */
     setOnMouseEnter(callback) {
         this.onMouseEnterCallback = callback;
     }
 
     /**
-     * 
-     * @param {function(string, any, SVGElement)} callback 
+     * Registers callback for when mouse leaves an element of the chart.
+     * Callbacks are fired when entering single data items,
+     * but also when leaving the section for a specific group (single box plot)
+     * @param {function(string, any, SVGElement)} callback the callback to registers, parameters are
+     *   type: string, string, which can be either "item" or "group"
+     *   data: any, for type "item", the data item hovered, for "group" the name of "group" as string
+     *   element: SVGElement, the element of the chart that is being hovered
      */
     setOnMouseLeave(callback) {
         this.onMouseLeaveCallback = callback;
@@ -127,9 +132,37 @@ export class BoxPlot {
             .attr("transform", "translate(-10,0)")
             .style("text-anchor", "end");
 
-        // draw boxes
-        this.boxes.selectAll(".minMaxLine")
+        const groupRows = this.hoverGroups
+            .selectAll(".boxplot-row")
             .data(summaryPerGroup)
+            .join("g")
+            .attr("class", "boxplot-row")
+            .attr("id", d => `boxplot-row_${d[0]}`)
+            .on("mouseenter",
+                (event, d) => callIfDefined(this.onMouseEnterCallback, "group", d[0], event.target.querySelector(".boxplot-row-bg"), event))
+            .on("mouseleave",
+                (event, d) => callIfDefined(this.onMouseLeaveCallback, "group", d[0], event.target.querySelector(".boxplot-row-bg"), event));
+
+        // add row background (for hover effect)
+        groupRows.selectAll(".boxplot-row-bg")
+            .data(d => [d])
+            .join("rect")
+            .attr("class", "boxplot-row-bg")
+            .attr("x", -this.margin.left)
+            .attr("y", ([groupName, _]) => this.y(groupName) - this.y.padding() * this.y.bandwidth() * 0.5)
+            .attr("width", this.width + this.margin.left + this.margin.right - 10)
+            .attr("height", this.y.step())
+            .attr("fill", "transparent")
+            .attr("stroke", "none");
+
+        // add boxes
+        const boxGroups = groupRows
+            .selectAll(".box-group")
+            .data(d => [d])
+            .join("g")
+            .attr("class", "box-group");
+        boxGroups.selectAll(".minMaxLine")
+            .data(d => [d])
             .join("line")
             .attr("class", "minMaxLine")
             .attr("x1", ([_, item]) => this.x(item.min))
@@ -138,8 +171,8 @@ export class BoxPlot {
             .attr("y2", ([groupName, _]) => this.y(groupName) + this.y.bandwidth() / 2)
             .attr("stroke", "black")
             .attr("stroke-width", 1);
-        this.boxes.selectAll(".quantileBox")
-            .data(summaryPerGroup)
+        boxGroups.selectAll(".quantileBox")
+            .data(d => [d])
             .join("rect")
             .attr("class", "quantileBox")
             .attr("x", ([_, item]) => this.x(item.q1))
@@ -149,8 +182,8 @@ export class BoxPlot {
             .attr("fill", "lightgrey")
             .attr("stroke", "black")
             .attr("stroke-width", 1);
-        this.boxes.selectAll(".medianLine")
-            .data(summaryPerGroup)
+        boxGroups.selectAll(".medianLine")
+            .data(d => [d])
             .join("line")
             .attr("class", "medianLine")
             .attr("x1", ([_, item]) => this.x(item.median))
@@ -161,13 +194,14 @@ export class BoxPlot {
             .attr("stroke-width", 1);
 
         // draw points
+        const pointGroups = groupRows
+            .selectAll(".points-group")
+            .data(d => [d])
+            .join("g")
+            .attr("class", "points-group");
         const jitter = this.y.bandwidth() * 0.45;
-        const groupItemPairs = Object.entries(data)
-            .map(([key, items]) => items.map(item => [key, item]))
-            .flat();
-
-        this.points.selectAll(".boxplot-data-items")
-            .data(groupItemPairs)
+        pointGroups.selectAll(".boxplot-data-items")
+            .data(([groupName, _]) => data[groupName].map(item => [groupName, item]))
             .join("circle")
             .attr("class", "boxplot-data-items")
             .attr("r", 3)
@@ -175,8 +209,8 @@ export class BoxPlot {
             .attr("cy", ([groupName, _]) => this.y(groupName) + this.y.bandwidth() / 2 + (Math.random() - 0.5) * jitter)
             .attr("fill", "black")
             .style("visibility", showDots ? "visible" : "hidden")
-            .on("mouseenter", (event, d) => this.callCallback(event, d))
-            .on("mouseleave", (event, d) => this.callCallback(event, d))
-            .on("click", (event, d) => this.callCallback(event, d));
+            .on("mouseenter", (event, d) => callIfDefined(this.onMouseEnterCallback, "item", d, event.target, event))
+            .on("mouseleave", (event, d) => callIfDefined(this.onMouseLeaveCallback, "item", d, event.target, event))
+            .on("click", (event, d) => callIfDefined(this.onClickCallback, "item", d, event.target, event));
     }
 }
