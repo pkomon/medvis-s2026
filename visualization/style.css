@@ -108,7 +108,7 @@ h2 {
 }
 
 .bar.dimmed {
-    opacity: 0.35;
+    opacity: 0.65;
 }
 
 .bar.highlighted {
@@ -117,6 +117,7 @@ h2 {
 
 .bar.selected {
     fill: #c84f31;
+    opacity: 1;
 }
 
 .linechart-container {
@@ -128,7 +129,7 @@ h2 {
 }
 
 .linechart-container.dimmed {
-    opacity: 0.38;
+    opacity: 0.65;
 }
 
 .linechart-container.highlighted {
@@ -139,6 +140,7 @@ h2 {
 .linechart-container.selected {
     border-color: #c84f31;
     background: #fff3ee;
+    opacity: 1;
 }
 
 .line-series {
@@ -208,4 +210,12 @@ transition: fill 100ms ease, opacity 100ms ease;
 
 .boxplot-data-item.highlighted {
     fill: orange; /*TODO better color*/
+}
+
+.boxplot-data-item.highlighted-hovered {
+    fill: #2f7fbd; /*TODO better color*/
+}
+
+.boxplot-data-item.highlighted-selected {
+    fill: #c84f31; /*TODO better color*/
 }
