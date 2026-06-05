@@ -15,14 +15,14 @@ export class LineChart {
     guideContainer = undefined;
     onPointHoverCallback = undefined;
 
-    constructor(containerId, xAccessor, yAccessorLine, yAccessorUncertain, desiredWidth = 200, desiredHeight = 80, title, indicatorVisible = false) {
+    constructor(containerId, xAccessor, yAccessorLine, yAccessorUncertain, desiredWidth = 200, desiredHeight = 120, title, indicatorVisible = false) {
         this.xAccessor = xAccessor;
         this.yAccessorLine = yAccessorLine;
         this.yAccessorUncertain = yAccessorUncertain; //TODO document
         this.root = d3.select(`#${containerId}`);
 
         // set the dimensions and margins of the graph
-        const margin = { top: 15, right: 25, bottom: 25, left: 25 };
+        const margin = { top: 25, right: 25, bottom: 25, left: 35 };
         const width = desiredWidth - margin.left - margin.right;
         const height = desiredHeight - margin.top - margin.bottom;
         this.width = width;
