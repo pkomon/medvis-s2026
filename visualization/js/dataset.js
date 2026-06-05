@@ -186,7 +186,8 @@ function parseCsv(text, lineSeparator = "\n", columnSeparator = ";") {
  * @returns {Promise<Dataset>}
  */
 export async function fetchDataset() {
-    const AMR_URL = "../../dataset/glass_amr.csv";
+    //const AMR_URL = "../../dataset/glass_amr.csv";
+    const AMR_URL = "https://raw.githubusercontent.com/pkomon/medvis-s2026/refs/heads/main/dataset/glass_amr.csv"; //for github pages
 
     const response = await fetch(AMR_URL);
     if (!response.ok) {

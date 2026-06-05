@@ -1,11 +1,10 @@
-# MedVis Project: AMR dashboard
-*TODO: find better title*
+# MedVis Project: Interactive AMR dashboard
 
 Web-based interactive dashboard that allows exploring the [WHO GLASS AMR dataset](https://worldhealthorg.shinyapps.io/glass-dashboard/_w_e19c46655b554cd08873fd015059a57f/_w_38e038c0b4964b3199d40fdcb242e668/#!/amr).
 
 This project aims to visualize the global state of antimicrobial resistance (AMR), allowing professionals to explore the resistance of pathogens to various antibiotics according to large scale empirical tests. Further, it enables the comparison of AMR between regions as well as over time.
 
-*TODO: demo link*
+A demo is available **[here](https://pkomon.github.io/medvis-s2026/visualization/)**.
 
 ## Acquisition and preprocessing
 The raw datasets can be downloaded from the WHO portal using a Python script and are merged into a single CSV file.
