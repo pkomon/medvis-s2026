@@ -54,7 +54,9 @@ export class BarChart {
         // x axis
         this.x = d3.scaleLinear()
             .range([0, this.width]);
-        this.xAxis = d3.axisTop().scale(this.x);
+        this.xAxis = d3.axisTop()
+            .scale(this.x)
+            .tickFormat(d => `${d}%`);
         this.svg.append("g")
             .attr("class", "myXAxis");
 
@@ -63,7 +65,7 @@ export class BarChart {
             .attr("text-anchor", "middle")
             .attr("x", this.width / 2)
             .attr("y", -margin.top + 10)
-            .text("Resistance (%)");
+            .text("Resistance");
     }
 
     setOnClickCallback(callback) {
