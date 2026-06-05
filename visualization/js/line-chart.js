@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { callIfDefined } from "./util.js";
 
 export class LineChart {
     svg = undefined;
@@ -340,21 +341,9 @@ export class MultipleSmallLineCharts {
             });
             const series = object.series || [{ name: key, type: object.type, data: object.data, color: "black" }];
             series.forEach(item => smallLineChart.add(item.name, item.type, item.data, item.color || "black"));
-            element.addEventListener("mouseenter", () => {
-                if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(key);
-                }
-            });
-            element.addEventListener("mouseleave", () => {
-                if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(undefined);
-                }
-            });
-            element.addEventListener("click", () => {
-                if (this.onClickCallback !== undefined) {
-                    this.onClickCallback(key);
-                }
-            });
+            element.addEventListener("mouseenter", () => callIfDefined(this.onHoverCallback, key));
+            element.addEventListener("mouseleave", () => callIfDefined(this.onHoverCallback, undefined));
+            element.addEventListener("click", () => callIfDefined(this.onClickCallback, key));
             return { name: key, element, chart: smallLineChart };
         });
         this.updateStyles();
