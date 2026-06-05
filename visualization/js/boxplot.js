@@ -77,11 +77,11 @@ export class BoxPlot {
     callCallback(event, dataItem) {
         //console.log(event, dataItem);
         if (event.type === "mouseenter" && this.onMouseEnterCallback !== undefined) {
-            this.onMouseEnterCallback("item", dataItem, event.target);
+            this.onMouseEnterCallback("item", dataItem, event.target, event);
         } else if (event.type === "mouseleave" && this.onMouseLeaveCallback !== undefined) {
-            this.onMouseLeaveCallback("item", dataItem, event.target);
+            this.onMouseLeaveCallback("item", dataItem, event.target, event);
         } else if (event.type === "click" && this.onClickCallback !== undefined) {
-            this.onClickCallback("item", dataItem, event.target);
+            this.onClickCallback("item", dataItem, event.target, event);
         }
     }
 
