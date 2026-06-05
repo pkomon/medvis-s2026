@@ -108,7 +108,8 @@ async function main() {
     const countrySelect = document.getElementById("country-select");
     const compareCountrySelect = document.getElementById("compare-country-select");
     const regionSelect = document.getElementById("region-select");
-    const detailContent = document.getElementById("detail-content");
+    const detailContentSelected = document.getElementById("detail-content-selected");
+    const detailContentHovered = document.getElementById("detail-content-hovered");
     const tooltip = document.createElement("div");
     tooltip.className = "tooltip";
     tooltip.hidden = true;
@@ -159,21 +160,21 @@ async function main() {
         ]);
     };
 
-    const updateDetailPanel = (item) => {
+    const updateDetailsPanel = (detailsPanel, item, hover = false) => {
         if (item === undefined) {
-            detailContent.className = "detail-content detail-empty";
-            detailContent.textContent = "Hover or click an antibiotic to inspect resistance details.";
+            detailsPanel.className = "detail-content detail-empty";
+            detailsPanel.textContent = `${hover ? "Hover" : "Click"} an antibiotic to inspect resistance details.`;
             return;
         }
 
-        detailContent.className = "detail-content";
+        detailsPanel.className = "detail-content";
         const sorted = [...currentBarChartData]
             .filter(d => d.percentResistant > 0)
             .sort((a, b) => a.percentResistant - b.percentResistant);
         const rank = sorted.findIndex(d => d.antibiotic === item.antibiotic) + 1;
         const total = sorted.length;
         const isCountryMode = document.getElementById("area-mode-select").value === "Country";
-        detailContent.innerHTML = createDetailsHtml(item, total, rank, isCountryMode);
+        detailsPanel.innerHTML = createDetailsHtml(item, total, rank, isCountryMode);
     };
 
     const updateLinkedState = () => {
@@ -183,7 +184,8 @@ async function main() {
         lineChart.setHighlightChart(hoveredAntibiotic);
         lineChart.setHighlightItem(hoveredItem);
         lineChart.setSelectionItem(selectedItem);
-        updateDetailPanel(hoveredItem || selectedItem);
+        updateDetailsPanel(detailContentSelected, selectedItem);
+        updateDetailsPanel(detailContentHovered, hoveredItem, true);
     };
 
     const setHoveredAntibiotic = (antibioticName, event, item) => {
@@ -312,7 +314,8 @@ async function main() {
         hoveredAntibiotic = undefined;
         selectedAntibiotic = undefined;
         selectedItem = undefined;
-        updateDetailPanel(undefined);
+        updateDetailsPanel(detailContentSelected, undefined);
+        updateDetailsPanel(detailContentHovered, undefined, true);
     });
 
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
@@ -345,7 +348,7 @@ async function main() {
     boxPlot.setOnClickCallback((type, item, element, event) => {
         if (type === "item") {
             selectedItem = item;
-            updateDetailPanel(item);
+            updateDetailsPanel(detailContentSelected, item);
             boxPlot.removeHighlightSelected();
             d3.select(element)
                 .classed("highlighted-selected", true);
@@ -376,7 +379,7 @@ async function main() {
         //console.log("Mouse enter event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             showDataItemTooltip(event, dataItem, `${dataItem.antibiotic} (${dataItem.countryName})`);
-            updateDetailPanel(dataItem);
+            updateDetailsPanel(detailContentHovered, dataItem, true);
             d3.select(element)
                 .classed("highlighted-hovered", true);
         } else if (mode === "group") {
@@ -388,7 +391,7 @@ async function main() {
         //console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             hideTooltip();
-            updateDetailPanel(selectedItem);
+            updateDetailsPanel(detailContentHovered, undefined, true);
             d3.select(element)
                 .classed("highlighted-hovered", false);
         } else if (mode === "group") {

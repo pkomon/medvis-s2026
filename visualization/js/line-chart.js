@@ -326,7 +326,7 @@ export class MultipleSmallLineCharts {
             const activeName = this.highlightedRowName;
             const isHighlighted = name === this.highlightedRowName;
             element.classList.toggle("highlighted", isHighlighted);
-            element.classList.toggle("dimmed", activeName !== undefined && name !== activeName);
+            //element.classList.toggle("dimmed", activeName !== undefined && name !== activeName);
             chart.updateLineStyles(this.highlightedItem, this.selectedItem);
         });
     }

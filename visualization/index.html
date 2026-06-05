@@ -49,11 +49,19 @@
       <div class="region-mode" hidden><select id="region-select"></select></div>
     </div>
 
-    <section id="detail-panel" class="detail-panel" aria-live="polite">
-      <h2>Selected antibiotic</h2>
-      <div id="detail-content" class="detail-content">
-        Hover or click an antibiotic to inspect resistance details.
-      </div>
+    <section class="detail-container">
+      <section id="detail-panel-selected" class="detail-panel" aria-live="polite">
+        <h2>Selected antibiotic</h2>
+        <div id="detail-content-selected" class="detail-content">
+          Hover or click an antibiotic to inspect resistance details.
+        </div>
+      </section>
+      <section id="detail-panel-hovered" class="detail-panel" aria-live="polite">
+        <h2>Hovered antibiotic</h2>
+        <div id="detail-content-hovered" class="detail-content">
+          Hover an antibiotic to inspect resistance details.
+        </div>
+      </section>
     </section>
 
     <div id="charts">
