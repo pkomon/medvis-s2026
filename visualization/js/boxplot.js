@@ -1,11 +1,6 @@
 import * as d3 from "d3";;
-import { computeSummary } from "./util.js";
+import { computeSummary, callIfDefined } from "./util.js";
 
-function callIfDefined(callback, ...args) {
-    if (callback !== undefined) {
-        callback(...args);
-    }
-}
 
 export class BoxPlot {
 
@@ -122,6 +117,11 @@ export class BoxPlot {
     removeRowHighlight(antibiotic) {
         this.svg.selectAll(`#boxplot-row-${antibiotic}>.boxplot-row-bg`)
             .classed("highlighted", false);
+    }
+
+    removeHighlightSelected() {
+        this.svg.selectAll(".boxplot-data-item")
+            .classed("highlighted-selected", false);
     }
 
     setData(data, showDots = true) {

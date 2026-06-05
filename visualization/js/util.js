@@ -12,3 +12,9 @@ export function computeSummary(array) {
     const max = sorted.at(-1);
     return { "min": min, "q1": q1, "median": median, "q3": q3, "max": max };
 }
+
+export function callIfDefined(callback, ...args) {
+    if (callback !== undefined) {
+        callback(...args);
+    }
+}

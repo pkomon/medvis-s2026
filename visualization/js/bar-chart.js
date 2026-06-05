@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { callIfDefined } from "./util.js";
 
 export class BarChart {
     svg = undefined;
@@ -124,27 +125,10 @@ export class BarChart {
             .attr("height", this.y.bandwidth())
             .attr("fill", "#69b3a2")
             .attr("class", "bar")
-            .on("mouseenter", (event, d) => {
-                if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(this.nameAccessor(d), event, d);
-                }
-            })
-            .on("mousemove", (event, d) => {
-                if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(this.nameAccessor(d), event, d);
-                }
-            })
-            .on("mouseleave", (event, d) => {
-                if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(undefined, event, d);
-                }
-            })
-            .on("click", (event, d) => {
-                const name = this.nameAccessor(d);
-                if (this.onClickCallback !== undefined) {
-                    this.onClickCallback(name);
-                }
-            });
+            .on("mouseenter", (event, d) => callIfDefined(this.onHoverCallback, this.nameAccessor(d), event, d))
+            .on("mousemove", (event, d) => callIfDefined(this.onHoverCallback, this.nameAccessor(d), event, d))
+            .on("mouseleave", (event, d) => callIfDefined(this.onHoverCallback, undefined, event, d))
+            .on("click", (event, d) => callIfDefined(this.onClickCallback, this.nameAccessor(d), event, d));
         this.updateStyles();
     }
 }

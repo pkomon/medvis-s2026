@@ -97,6 +97,7 @@ async function main() {
     let currentBarChartData = [];
     let hoveredAntibiotic = undefined;
     let selectedAntibiotic = undefined;
+    let currentSelectedItem = undefined;
 
     const getActiveAntibiotic = () => hoveredAntibiotic || selectedAntibiotic;
 
@@ -136,8 +137,7 @@ async function main() {
         ]);
     };
 
-    const updateDetailPanel = (antibioticName) => {
-        const item = antibioticName !== undefined ? getCurrentItem(antibioticName) : undefined;
+    const updateDetailPanel = (item) => {
         if (item === undefined) {
             detailContent.className = "detail-content detail-empty";
             detailContent.textContent = "Hover or click an antibiotic to inspect resistance details.";
@@ -194,7 +194,8 @@ async function main() {
         barChart.setSelection(selectedAntibiotic);
         lineChart.setHighlight(hoveredAntibiotic);
         lineChart.setSelection(selectedAntibiotic);
-        updateDetailPanel(activeAntibiotic);
+        const item = activeAntibiotic !== undefined ? getCurrentItem(activeAntibiotic) : undefined;
+        updateDetailPanel(item);
     };
 
     const setHoveredAntibiotic = (antibioticName, event, item) => {
@@ -207,7 +208,8 @@ async function main() {
         }
     };
 
-    const setSelectedAntibiotic = (antibioticName) => {
+    const setSelectedAntibiotic = (antibioticName, event, item) => {
+        currentSelectedItem = item;
         selectedAntibiotic = selectedAntibiotic === antibioticName ? undefined : antibioticName;
         updateLinkedState();
     };
@@ -316,6 +318,10 @@ async function main() {
         const isCountryMode = event.target.value === "Country";
         document.querySelectorAll(".country-mode").forEach((element) => element.hidden = !isCountryMode);
         document.querySelectorAll(".region-mode").forEach((element) => element.hidden = isCountryMode);
+        hoveredAntibiotic = undefined;
+        selectedAntibiotic = undefined;
+        currentSelectedItem = undefined;
+        updateDetailPanel(undefined);
     });
 
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
@@ -340,8 +346,11 @@ async function main() {
     });
     boxPlot.setOnClickCallback((type, item, element, event) => {
         if (type === "item") {
-            console.log(item);
-            boxPlot.toggleHighlightForCountry(item.iso3);
+            currentSelectedItem = item;
+            updateDetailPanel(item);
+            boxPlot.removeHighlightSelected();
+            d3.select(element)
+                .classed("highlighted-selected", true);
         }
     });
 
@@ -369,10 +378,9 @@ async function main() {
         //console.log("Mouse enter event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             showDataItemTooltip(event, dataItem, `${dataItem.antibiotic} (${dataItem.countryName})`);
+            updateDetailPanel(dataItem);
             d3.select(element)
-                .transition()
-                .duration(100)
-                .attr("fill", "red");
+                .classed("highlighted-hovered", true);
         } else if (mode === "group") {
             lineChartRegions.setHighlight(dataItem);
             boxPlot.highlightRow(dataItem);
@@ -382,6 +390,9 @@ async function main() {
         //console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             hideTooltip();
+            updateDetailPanel(currentSelectedItem);
+            d3.select(element)
+                .classed("highlighted-hovered", false);
         } else if (mode === "group") {
             lineChartRegions.setHighlight(undefined);
             boxPlot.removeRowHighlight(dataItem);
