@@ -125,7 +125,7 @@ export class BarChart {
         const colorAccessor = typeof color === "function" ? color : () => color;
 
         if (sortBarsByValue) {
-            data = data.sort((a, b) => this.valueAccessor(a) < this.valueAccessor(b));
+            data = data.sort((a, b) => this.valueAccessor(a) > this.valueAccessor(b));
         }
 
         // update x axis
