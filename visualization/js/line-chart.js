@@ -67,7 +67,8 @@ export class LineChart {
             .domain([0, 100]);
         this.yAxis = d3.axisLeft()
             .scale(this.y)
-            .ticks(3, "d");
+            .ticks(3, "d")
+            .tickFormat(d => `${d}%`);
         this.svg.append("g")
             .attr("class", "myYAxis")
             .call(this.yAxis);
