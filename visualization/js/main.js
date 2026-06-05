@@ -4,6 +4,7 @@ import { fetchDataset } from "./dataset.js"
 import { BarChart } from "./bar-chart.js";
 import { BoxPlot } from "./boxplot.js";
 import { MultipleSmallLineCharts } from "./line-chart.js";
+import { computeSummary } from "./util.js";
 
 /**
  * Adds updates options of a HTML <select> element.
@@ -182,7 +183,8 @@ async function main() {
                 && item.pathogen === pathogen
                 && item.iso3 === country)
             .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year);
-        const perLineData = groupBy(currentLineChartData, item => item.antibiotic);
+        const perLineData = Object.fromEntries(Object.entries(groupBy(currentLineChartData, item => item.antibiotic))
+            .map(([key, value], _) => [key, { "type": "line", "data": value }]));
         lineChart.setData(perLineData);
 
         // update bar chart
@@ -202,6 +204,24 @@ async function main() {
                 && (isGlobalRegion || item.whoRegionName === regionName));
         const perBoxData = groupBy(boxPlotData, item => item.antibiotic);
         boxPlot.setData(perBoxData);
+
+        // update area/line charts
+        lineChartRegions.removeAll();
+        const regionLineChartItems = dataset.items
+            .filter(item => item.infection === infection
+                && item.pathogen === pathogen
+                && (isGlobalRegion || item.whoRegionName === regionName));
+        const perAntibioticDataInRegion = groupBy(regionLineChartItems, item => item.antibiotic);
+        const regionLineChartData = Object.fromEntries(Object.entries(perAntibioticDataInRegion)
+            .map(([antibiotic, itemsWithAntibiotic]) => {
+                const uncertainData = Object.entries(groupBy(itemsWithAntibiotic, item => item.year))
+                    .map(([year, itemsForYear]) => {
+                        const values = itemsForYear.map(item => item.percentResistant);
+                        return { year: year, ...computeSummary(values) };
+                    });
+                return [antibiotic, { type: "uncertain", data: uncertainData }];
+            }));
+        lineChartRegions.setData(regionLineChartData);
     };
 
     // TODO for each selection, we should update all others with available data - but this might be confusing to user?
@@ -227,6 +247,8 @@ async function main() {
     const barChart = new BarChart("barchart", item => item.antibiotic, item => item.percentResistant);
     const boxPlot = new BoxPlot("boxplot", item => item.antibiotic, item => item.percentResistant);
     const lineChart = new MultipleSmallLineCharts("linechart-grid", item => item.year, item => item.percentResistant);
+    const lineChartRegions = new MultipleSmallLineCharts("region-linechart-grid",
+        item => item.year, item => item.percentResistant, item => item);
     barChart.setOnHoverCallback(setHoveredAntibiotic);
     barChart.setOnClickCallback(setSelectedAntibiotic);
     lineChart.setOnHoverCallback(setHoveredAntibiotic);

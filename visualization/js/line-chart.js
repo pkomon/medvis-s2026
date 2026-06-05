@@ -10,10 +10,13 @@ export class LineChart {
     yAxis = undefined;
     lines = {};
     root = undefined;
+    linesContainer = undefined;
+    uncertainContainer = undefined;
 
-    constructor(containerId, xAccessor, yAccessor, desiredWidth = 200, desiredHeight = 80, title, indicatorVisible = false) {
+    constructor(containerId, xAccessor, yAccessorLine, yAccessorUncertain, desiredWidth = 200, desiredHeight = 80, title, indicatorVisible = false) {
         this.xAccessor = xAccessor;
-        this.yAccessor = yAccessor;
+        this.yAccessorLine = yAccessorLine;
+        this.yAccessorUncertain = yAccessorUncertain; //TODO document
         this.root = d3.select(`#${containerId}`);
 
         // set the dimensions and margins of the graph
@@ -28,6 +31,9 @@ export class LineChart {
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        this.linesContainer = this.svg.append("g");
+        this.uncertainContainer = this.svg.append("g");
 
         // indicator for current time
         this.indicator = this.svg
@@ -91,39 +97,79 @@ export class LineChart {
 
     updateLines() {
         Object.keys(this.lines).forEach((name) => {
-            const lineObject = this.lines[name];
-            const data = lineObject.data;
-            const color = lineObject.color;
-            const lineId = lineObject.id;
-            //const colorIndex = this.lines[name].colorIndex;
+            const object = this.lines[name];
+            const color = object.color;
+            if (object.type === "line") {
+                const lineData = object.data;
+                const lineId = object.id;
+                //const colorIndex = this.lines[name].colorIndex;
 
-            const selection = this.svg.selectAll(`.${lineId}`)
-                .data([data], this.xAccessor);
+                const selection = this.linesContainer.selectAll(`.${lineId}`)
+                    .data([lineData], this.xAccessor);
 
-            // update the line
-            selection
-                .join("path")
-                .attr("class", `${lineId} line-series`)
-                .attr("d", d3.line()
-                    .x(d => this.x(this.xAccessor(d)))
-                    .y(d => this.y(this.yAccessor(d))))
-                .attr("fill", "none")
-                .attr("stroke", color)
-                .attr("stroke-width", 2.5);
+                // update the line
+                selection
+                    .join("path")
+                    .attr("class", `${lineId} line-series`)
+                    .attr("d", d3.line()
+                        .x(d => this.x(this.xAccessor(d)))
+                        .y(d => this.y(this.yAccessorLine(d))))
+                    .attr("fill", "none")
+                    .attr("stroke", color)
+                    .attr("stroke-width", 2.5);
 
-            selection
-                .data(data)
-                .join("circle")
-                .attr("r", 3)
-                .attr("cx", d => this.x(this.xAccessor(d)))
-                .attr("cy", d => this.y(this.yAccessor(d)))
-                .attr("stroke", color)
-                .attr("stroke-width", 2.5);
+                selection
+                    .data(lineData)
+                    .join("circle")
+                    .attr("r", 3)
+                    .attr("cx", d => this.x(this.xAccessor(d)))
+                    .attr("cy", d => this.y(this.yAccessorLine(d)))
+                    .attr("stroke", color)
+                    .attr("stroke-width", 2.5);
+            } else if (object.type === "uncertain") {
+                const lineData = object.data;
+                const lineId = object.id;
+                //const colorIndex = this.lines[name].colorIndex;
+
+                const selection = this.uncertainContainer.selectAll(`.${lineId}`)
+                    .data([lineData], this.xAccessor);
+
+                // update the line
+                selection
+                    .join("path")
+                    .attr("class", `${lineId}`)
+                    .attr("d", d3.area()
+                        .x(d => this.x(this.xAccessor(d)))
+                        .y0(d => this.y(this.yAccessorUncertain(d).min))
+                        .y1(d => this.y(this.yAccessorUncertain(d).max)))
+                    .attr("fill", "#EEEEEE");
+                selection
+                    .join("path")
+                    .attr("class", `${lineId}`)
+                    .attr("d", d3.area()
+                        .x(d => this.x(this.xAccessor(d)))
+                        .y0(d => this.y(this.yAccessorUncertain(d).q1))
+                        .y1(d => this.y(this.yAccessorUncertain(d).q3)))
+                    .attr("fill", "lightgrey");
+
+                selection
+                    .join("path")
+                    .attr("class", `${lineId}`)
+                    .attr("d", d3.line()
+                        .x(d => this.x(this.xAccessor(d)))
+                        .y(d => this.y(this.yAccessorUncertain(d).median)))
+                    .attr("fill", "none")
+                    .attr("stroke", "black");
+            }
         });
     }
 
-    addLine(name, data, color) {
-        this.lines[name] = { data: data, color: color, id: `line-${Object.keys(this.lines).length}` };
+    add(name, type, data, color) {
+        if (type !== "line" && type !== "uncertain") {
+            throw new Error(`Failed to add element to LineChart, invalid type: ${type}`);
+        }
+
+        this.lines[name] = { type: type, data: data, color: color, id: `line-${Object.keys(this.lines).length}` };
         this.updateLines();
     }
 
@@ -155,11 +201,12 @@ export class MultipleSmallLineCharts {
     onHoverCallback = undefined;
     onClickCallback = undefined;
 
-    constructor(containerId, xAccessor, yAccessor) {
+    constructor(containerId, xAccessor, yAccessor, yAccessorUncertain) {
         //this.container = d3.select(`#${containerId}`);
         this.container = document.getElementById(containerId);
         this.xAccessor = xAccessor;
         this.yAccessor = yAccessor;
+        this.yAccessorUncertain = yAccessorUncertain;
     }
 
     setOnHoverCallback(callback) {
@@ -206,13 +253,13 @@ export class MultipleSmallLineCharts {
      */
     setData(data) {
         this.lineCharts = Object.keys(data).map((key, index) => {
-            const value = data[key];
+            const object = data[key];
             const element = document.createElement("div");
-            element.id = `linechart-container-${index}`;
+            element.id = `${this.container.id}-${index}`;
             element.className = "linechart-container";
             this.container.appendChild(element);
-            const smallLineChart = new LineChart(element.id, this.xAccessor, this.yAccessor, undefined, undefined, key);
-            smallLineChart.addLine(key, value, "black");
+            const smallLineChart = new LineChart(element.id, this.xAccessor, this.yAccessor, this.yAccessorUncertain, undefined, undefined, key);
+            smallLineChart.add(key, object.type, object.data, "black");
             element.addEventListener("mouseenter", () => {
                 if (this.onHoverCallback !== undefined) {
                     this.onHoverCallback(key);
