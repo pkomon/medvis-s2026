@@ -15,6 +15,7 @@ export class LineChart {
     uncertainContainer = undefined;
     guideContainer = undefined;
     onPointHoverCallback = undefined;
+    onPointClickCallback = undefined;
 
     constructor(containerId, xAccessor, yAccessorLine, yAccessorUncertain, desiredWidth = 200, desiredHeight = 120, title, indicatorVisible = false) {
         this.xAccessor = xAccessor;
@@ -116,6 +117,10 @@ export class LineChart {
         this.onPointHoverCallback = callback;
     }
 
+    setOnPointClickCallback(callback) {
+        this.onPointClickCallback = callback;
+    }
+
     setGuide(year, value) {
         if (year === undefined || value === undefined) {
             this.clearGuide();
@@ -171,21 +176,10 @@ export class LineChart {
                     .attr("stroke", color)
                     .attr("stroke-width", 2.5)
                     .style("pointer-events", "all")
-                    .on("mouseenter", (event, d) => {
-                        if (this.onPointHoverCallback !== undefined) {
-                            this.onPointHoverCallback(name, event, d);
-                        }
-                    })
-                    .on("mousemove", (event, d) => {
-                        if (this.onPointHoverCallback !== undefined) {
-                            this.onPointHoverCallback(name, event, d);
-                        }
-                    })
-                    .on("mouseleave", (event, d) => {
-                        if (this.onPointHoverCallback !== undefined) {
-                            this.onPointHoverCallback(undefined, event, d);
-                        }
-                    });
+                    .on("mouseenter", (event, d) => callIfDefined(this.onPointHoverCallback, name, event, d))
+                    .on("mousemove", (event, d) => callIfDefined(this.onPointHoverCallback, name, event, d))
+                    .on("mouseleave", (event, d) => callIfDefined(this.onPointHoverCallback, undefined, event, d))
+                    .on("click", (event, d) => callIfDefined(this.onPointClickCallback, name, event, d));
             } else if (object.type === "uncertain") {
                 const lineData = object.data;
                 const lineId = object.id;
@@ -226,7 +220,26 @@ export class LineChart {
         this.guideContainer.raise();
     }
 
-    add(name, type, data, color) {
+    updateLineStyles(highlightedItem = undefined, selectedItem = undefined) {
+        Object.values(this.lines).forEach(line => {
+            if (line.type !== "line") {
+                return;
+            }
+            this.linesContainer.selectAll(`.${line.id}`)
+                .attr("stroke", line.color)
+                .attr("stroke-width", 2.5);
+
+            const points = this.linesContainer.selectAll(`.${line.id}-point`)
+                .classed("highlighted", d => d.equalsId(highlightedItem))
+                .classed("selected", d => d.equalsId(selectedItem))
+                .attr("r", d => d.equalsId(highlightedItem) || d.equalsId(selectedItem) ? 7 : 5)
+                .attr("stroke", d => d.equalsId(selectedItem) ? "#c84f31" : d.equalsId(highlightedItem) ? "#2f7fbd" : line.color)
+                .attr("stroke-width", d => d.equalsId(highlightedItem) || d.equalsId(selectedItem) ? 3.5 : 2.5);
+            points.filter(d => d.equalsId(highlightedItem) || d.equalsId(selectedItem)).raise();
+        });
+    }
+
+    add(name, type, data, color = "black") {
         if (type !== "line" && type !== "uncertain") {
             throw new Error(`Failed to add element to LineChart, invalid type: ${type}`);
         }
@@ -260,10 +273,10 @@ export class MultipleSmallLineCharts {
     lineCharts = [];
     highlightedRowName = undefined;
     highlightedItem = undefined;
-    selectedName = undefined;
+    selectedItem = undefined;
     onHoverChartCallback = undefined;
-    onClickCallback = undefined;
     onPointHoverCallback = undefined;
+    onPointClickCallback = undefined;
 
     constructor(containerId, xAccessor, yAccessor, yAccessorUncertain) {
         //this.container = d3.select(`#${containerId}`);
@@ -277,12 +290,12 @@ export class MultipleSmallLineCharts {
         this.onHoverChartCallback = callback;
     }
 
-    setOnClickCallback(callback) {
-        this.onClickCallback = callback;
-    }
-
     setOnPointHoverCallback(callback) {
         this.onPointHoverCallback = callback;
+    }
+
+    setOnPointClickCallback(callback) {
+        this.onPointClickCallback = callback;
     }
 
     setGuide(year, value) {
@@ -303,25 +316,18 @@ export class MultipleSmallLineCharts {
         this.updateStyles();
     }
 
-    setSelection(name) {
-        this.selectedName = name;
+    setSelectionItem(item) {
+        this.selectedItem = item;
         this.updateStyles();
     }
 
     updateStyles() {
-        this.lineCharts.forEach(({ name, element }) => {
-            const activeName = this.highlightedRowName || this.selectedName;
+        this.lineCharts.forEach(({ name, element, chart }) => {
+            const activeName = this.highlightedRowName;
             const isHighlighted = name === this.highlightedRowName;
-            const isSelected = name === this.selectedName;
             element.classList.toggle("highlighted", isHighlighted);
-            element.classList.toggle("selected", isSelected);
             element.classList.toggle("dimmed", activeName !== undefined && name !== activeName);
-
-            const path = element.querySelector(".line-series");
-            if (path !== null) {
-                path.setAttribute("stroke", isSelected ? "#c84f31" : isHighlighted ? "#2f7fbd" : "black");
-                path.setAttribute("stroke-width", isSelected || isHighlighted ? "3.5" : "2.5");
-            }
+            chart.updateLineStyles(this.highlightedItem, this.selectedItem);
         });
     }
 
@@ -341,11 +347,12 @@ export class MultipleSmallLineCharts {
             this.container.appendChild(element);
             const smallLineChart = new LineChart(element.id, this.xAccessor, this.yAccessor, this.yAccessorUncertain, undefined, undefined, key);
             smallLineChart.setOnPointHoverCallback((seriesName, event, item) => callIfDefined(this.onPointHoverCallback, key, seriesName, event, item));
-            const series = object.series || [{ name: key, type: object.type, data: object.data, color: "black" }];
-            series.forEach(item => smallLineChart.add(item.name, item.type, item.data, item.color || "black"));
+            smallLineChart.setOnPointClickCallback((seriesName, event, item) => callIfDefined(this.onPointClickCallback, key, seriesName, event, item));
+            const seriesColor = object.color || "black";
+            const series = object.series || [{ name: key, type: object.type, data: object.data, color: seriesColor }];
+            series.forEach(item => smallLineChart.add(item.name, item.type, item.data, item.color || seriesColor));
             element.addEventListener("mouseenter", () => callIfDefined(this.onHoverChartCallback, key));
             element.addEventListener("mouseleave", () => callIfDefined(this.onHoverChartCallback, undefined));
-            element.addEventListener("click", () => callIfDefined(this.onClickCallback, key));
             return { name: key, element, chart: smallLineChart };
         });
         this.updateStyles();

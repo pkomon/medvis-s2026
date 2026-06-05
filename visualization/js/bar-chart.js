@@ -19,7 +19,7 @@ export class BarChart {
     onClickItemCallback = undefined;
     highlightedRowName = undefined;
     highlightedItem = undefined;
-    selectedName = undefined;
+    selectedItem = undefined;
 
     constructor(containerId, nameAccessor, valueAccessor) {
         this.nameAccessor = nameAccessor;
@@ -96,8 +96,8 @@ export class BarChart {
         this.updateStyles();
     }
 
-    setSelection(name) {
-        this.selectedName = name;
+    setSelectionItem(item) {
+        this.selectedItem = item;
         this.updateStyles();
     }
 
@@ -109,14 +109,21 @@ export class BarChart {
         // update bar background
         this.content.selectAll("rect")
             .classed("highlighted", d => d.equalsId(this.highlightedItem))
-            .classed("selected", d => this.nameAccessor(d) === this.selectedName)
-            .classed("dimmed", d => {
-                const activeName = this.highlightedRowName || this.selectedName;
+            .classed("selected", d => d.equalsId(this.selectedItem));
+            //TODO not sure if we want this
+            /*.classed("dimmed", d => {
+                const activeName = this.highlightedRowName || this.selectedItem;
                 return activeName !== undefined && this.nameAccessor(d) !== activeName;
-            });
+            });*/
     }
 
-    setData(data, sortBarsByValue = true) {
+    setData(data, color = "#69b3a2", sortBarsByValue = true) {
+        if (typeof color === "boolean") {
+            sortBarsByValue = color;
+            color = "#69b3a2";
+        }
+        const colorAccessor = typeof color === "function" ? color : () => color;
+
         if (sortBarsByValue) {
             data = data.sort((a, b) => this.valueAccessor(a) < this.valueAccessor(b));
         }
@@ -155,7 +162,7 @@ export class BarChart {
             .attr("y", d => this.y(this.nameAccessor(d)))
             .attr("width", d => this.x(this.valueAccessor(d)))
             .attr("height", this.y.bandwidth())
-            .attr("fill", "#69b3a2")
+            .attr("fill", d => colorAccessor(d))
             .attr("class", "bar")
             .on("mouseenter", (event, d) => callIfDefined(this.onHoverItemCallback, this.nameAccessor(d), event, d))
             .on("mousemove", (event, d) => callIfDefined(this.onHoverItemCallback, this.nameAccessor(d), event, d))

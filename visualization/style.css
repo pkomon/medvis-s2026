@@ -138,7 +138,6 @@ h2 {
     border: 1px solid transparent;
     border-radius: 6px;
     padding: 2px;
-    cursor: pointer;
     transition: border-color 120ms ease, background-color 120ms ease, opacity 120ms ease;
 }
 
@@ -150,12 +149,6 @@ h2 {
     /*border-color: #2f7fbd;
     background: #eef6fc;*/
     background: #fff9c4;
-}
-
-.linechart-container.selected {
-    border-color: #c84f31;
-    background: #fff3ee;
-    opacity: 1;
 }
 
 .line-series {

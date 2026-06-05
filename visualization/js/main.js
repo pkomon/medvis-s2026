@@ -98,7 +98,7 @@ async function main() {
     let hoveredAntibiotic = undefined;
     let selectedAntibiotic = undefined;
     let hoveredItem = undefined;
-    let currentSelectedItem = undefined;
+    let selectedItem = undefined;
 
     const getActiveAntibiotic = () => hoveredAntibiotic || selectedAntibiotic;
 
@@ -198,15 +198,13 @@ async function main() {
     };
 
     const updateLinkedState = () => {
-        const activeAntibiotic = getActiveAntibiotic();
         barChart.setHighlightRow(hoveredAntibiotic);
         barChart.setHighlightItem(hoveredItem);
-        barChart.setSelection(selectedAntibiotic);
+        barChart.setSelectionItem(selectedItem);
         lineChart.setHighlightChart(hoveredAntibiotic);
         lineChart.setHighlightItem(hoveredItem);
-        lineChart.setSelection(selectedAntibiotic);
-        const item = activeAntibiotic !== undefined ? getCurrentItem(activeAntibiotic) : undefined;
-        updateDetailPanel(item);
+        lineChart.setSelectionItem(selectedItem);
+        updateDetailPanel(hoveredItem || selectedItem);
     };
 
     const setHoveredAntibiotic = (antibioticName, event, item) => {
@@ -221,8 +219,9 @@ async function main() {
     };
 
     const setSelectedAntibiotic = (antibioticName, event, item) => {
-        currentSelectedItem = item;
-        selectedAntibiotic = selectedAntibiotic === antibioticName ? undefined : antibioticName;
+        const isSameSelection = selectedItem !== undefined && selectedItem.equalsId(item);
+        selectedAntibiotic = isSameSelection ? undefined : antibioticName;
+        selectedItem = selectedAntibiotic === undefined ? undefined : item;
         updateLinkedState();
     };
 
@@ -278,6 +277,7 @@ async function main() {
         currentBarChartData = currentLineChartData.filter(item => item.year === year);
         if (selectedAntibiotic !== undefined && getCurrentItem(selectedAntibiotic) === undefined) {
             selectedAntibiotic = undefined;
+            //selectedItem = undefined;
         }
         barChart.setData(currentBarChartData);
         updateLinkedState();
@@ -332,7 +332,7 @@ async function main() {
         document.querySelectorAll(".region-mode").forEach((element) => element.hidden = isCountryMode);
         hoveredAntibiotic = undefined;
         selectedAntibiotic = undefined;
-        currentSelectedItem = undefined;
+        selectedItem = undefined;
         updateDetailPanel(undefined);
     });
 
@@ -348,7 +348,6 @@ async function main() {
         lineChart.setHighlightChart(antibioticName);
     });
     lineChart.setOnHoverChartCallback(setHoveredAntibiotic);
-    lineChart.setOnClickCallback(setSelectedAntibiotic);
     lineChart.setOnPointHoverCallback((antibioticName, seriesName, event, item) => {
         if (antibioticName === undefined) {
             setHoveredAntibiotic(undefined);
@@ -356,13 +355,17 @@ async function main() {
             return;
         }
         hoveredAntibiotic = antibioticName;
+        hoveredItem = item;
         updateLinkedState();
         lineChart.setGuide(item.year, item.percentResistant);
         showDataItemTooltip(event, item, `${antibioticName} (${seriesName})`);
     });
+    lineChart.setOnPointClickCallback((antibioticName, seriesName, event, item) => {
+        setSelectedAntibiotic(antibioticName, event, item);
+    });
     boxPlot.setOnClickCallback((type, item, element, event) => {
         if (type === "item") {
-            currentSelectedItem = item;
+            selectedItem = item;
             updateDetailPanel(item);
             boxPlot.removeHighlightSelected();
             d3.select(element)
@@ -406,7 +409,7 @@ async function main() {
         //console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             hideTooltip();
-            updateDetailPanel(currentSelectedItem);
+            updateDetailPanel(selectedItem);
             d3.select(element)
                 .classed("highlighted-hovered", false);
         } else if (mode === "group") {
