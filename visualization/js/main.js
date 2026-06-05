@@ -4,7 +4,7 @@ import { fetchDataset } from "./dataset.js"
 import { BarChart } from "./bar-chart.js";
 import { BoxPlot } from "./boxplot.js";
 import { MultipleSmallLineCharts } from "./line-chart.js";
-import { computeSummary } from "./util.js";
+import { computeSummary, formatInteger, formatPercent, groupBy } from "./util.js";
 
 /**
  * Adds updates options of a HTML <select> element.
@@ -21,7 +21,6 @@ import { computeSummary } from "./util.js";
 function updateSelectGroup(selectElement, data, compoundValues = false, compoundNames = false) {
     // clear content
     selectElement.textContent = "";
-
 
     let nodes = undefined;
     if (data["values"] !== undefined && data["values"] instanceof Array) { // create options without optgroups
@@ -56,27 +55,49 @@ function updateSelectGroup(selectElement, data, compoundValues = false, compound
     selectElement.append(...nodes);
 }
 
-function groupBy(data, accessor) {
-    const result = new Map();
-    data.forEach(item => {
-        const array = result.getOrInsert(accessor(item), []);
-        array.push(item);
-    });
-    return Object.fromEntries(result);
-}
-
-function formatPercent(value) {
-    if (value === undefined || Number.isNaN(value)) {
-        return "n/a";
-    }
-    return `${value.toFixed(1)}%`;
-}
-
-function formatInteger(value) {
-    if (value === undefined || Number.isNaN(value)) {
-        return "n/a";
-    }
-    return value.toLocaleString("en-US");
+function createDetailsHtml(item, total, rank, isCountryMode) {
+    const susceptible = 100 - item.percentResistant;
+    return `
+        <div class="detail-item">
+            <span class="detail-label">Antibiotic</span>
+            <span class="detail-value">${item.antibiotic}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Reported resistance</span>
+            <span class="detail-value">${formatPercent(item.percentResistant)}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Estimated susceptibility</span>
+            <span class="detail-value">${formatPercent(susceptible)}</span>
+        </div>
+        <div class="detail-item">
+            <div ${isCountryMode ? "" : "hidden"}>
+                <span class="detail-label" title="Higher rank means higher susceptibility against bacteria in year in country compared to other antibiotics."
+                    style="
+                        cursor: help;
+                        text-decoration: underline dotted;
+                        text-underline-offset: 2px;
+                    ">Rank</span>
+                <span class="detail-value">${rank} of ${total}</span>
+            </div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Resistant / ASTs</span>
+            <span class="detail-value">${formatInteger(item.numResistant)} / ${formatInteger(item.numTests)}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Country</span>
+            <span class="detail-value">${item.countryName}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Pathogen</span>
+            <span class="detail-value">${item.pathogen}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Year</span>
+            <span class="detail-value">${item.year}</span>
+        </div>
+        `;
 }
 
 async function main() {
@@ -145,56 +166,14 @@ async function main() {
             return;
         }
 
+        detailContent.className = "detail-content";
         const sorted = [...currentBarChartData]
             .filter(d => d.percentResistant > 0)
             .sort((a, b) => a.percentResistant - b.percentResistant);
         const rank = sorted.findIndex(d => d.antibiotic === item.antibiotic) + 1;
         const total = sorted.length;
-        const susceptible = 100 - item.percentResistant;
-
-        detailContent.className = "detail-content";
         const isCountryMode = document.getElementById("area-mode-select").value === "Country";
-        detailContent.innerHTML = `
-            <div class="detail-item">
-                <span class="detail-label">Antibiotic</span>
-                <span class="detail-value">${item.antibiotic}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Reported resistance</span>
-                <span class="detail-value">${formatPercent(item.percentResistant)}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Estimated susceptibility</span>
-                <span class="detail-value">${formatPercent(susceptible)}</span>
-            </div>
-            <div class="detail-item">
-                <div ${isCountryMode ? "" : "hidden"}>
-                    <span class="detail-label" title="Higher rank means higher susceptibility against bacteria in year in country compared to other antibiotics."
-                        style="
-                            cursor: help;
-                            text-decoration: underline dotted;
-                            text-underline-offset: 2px;
-                        ">Rank</span>
-                    <span class="detail-value">${rank} of ${total}</span>
-                </div>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Resistant / ASTs</span>
-                <span class="detail-value">${formatInteger(item.numResistant)} / ${formatInteger(item.numTests)}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Country</span>
-                <span class="detail-value">${item.countryName}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Pathogen</span>
-                <span class="detail-value">${item.pathogen}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Year</span>
-                <span class="detail-value">${item.year}</span>
-            </div>
-        `;
+        detailContent.innerHTML = createDetailsHtml(item, total, rank, isCountryMode);
     };
 
     const updateLinkedState = () => {

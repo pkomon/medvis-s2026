@@ -18,3 +18,27 @@ export function callIfDefined(callback, ...args) {
         callback(...args);
     }
 }
+
+export function groupBy(data, accessor) {
+    const result = new Map();
+    data.forEach(item => {
+        const array = result.getOrInsert(accessor(item), []);
+        array.push(item);
+    });
+    return Object.fromEntries(result);
+}
+
+export function formatPercent(value) {
+    if (value === undefined || Number.isNaN(value)) {
+        return "n/a";
+    }
+    return `${value.toFixed(1)}%`;
+}
+
+export function formatInteger(value) {
+    if (value === undefined || Number.isNaN(value)) {
+        return "n/a";
+    }
+    return value.toLocaleString("en-US");
+}
+
