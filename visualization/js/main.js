@@ -168,8 +168,14 @@ async function main() {
             </div>
             <div class="detail-item">
                 <div ${isCountryMode ? "" : "hidden"}>
-                    <span class="detail-label">Rank</span>
-                    <span class="detail-value">${rank} of ${total} (lower resistance first)</span>
+                    <span class="detail-label" title="Higher rank means higher susceptibility against bacteria in year in country compared to other antibiotics."
+                        style="
+                            cursor: help;
+                            color: #0d6efd;
+                            text-decoration: underline dotted;
+                            text-underline-offset: 2px;
+                        ">Rank</span>
+                    <span class="detail-value">${rank} of ${total}</span>
                 </div>
             </div>
             <div class="detail-item">
