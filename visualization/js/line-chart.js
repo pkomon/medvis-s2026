@@ -258,9 +258,10 @@ export class MultipleSmallLineCharts {
 
     /** @type {LineChart} */
     lineCharts = [];
-    highlightedName = undefined;
+    highlightedRowName = undefined;
+    highlightedItem = undefined;
     selectedName = undefined;
-    onHoverCallback = undefined;
+    onHoverChartCallback = undefined;
     onClickCallback = undefined;
     onPointHoverCallback = undefined;
 
@@ -272,8 +273,8 @@ export class MultipleSmallLineCharts {
         this.yAccessorUncertain = yAccessorUncertain;
     }
 
-    setOnHoverCallback(callback) {
-        this.onHoverCallback = callback;
+    setOnHoverChartCallback(callback) {
+        this.onHoverChartCallback = callback;
     }
 
     setOnClickCallback(callback) {
@@ -292,8 +293,13 @@ export class MultipleSmallLineCharts {
         this.lineCharts.forEach(({ chart }) => chart.clearGuide());
     }
 
-    setHighlight(name) {
-        this.highlightedName = name;
+    setHighlightChart(name) {
+        this.highlightedRowName = name;
+        this.updateStyles();
+    }
+
+    setHighlightItem(item) {
+        this.highlightedItem = item;
         this.updateStyles();
     }
 
@@ -304,8 +310,8 @@ export class MultipleSmallLineCharts {
 
     updateStyles() {
         this.lineCharts.forEach(({ name, element }) => {
-            const activeName = this.highlightedName || this.selectedName;
-            const isHighlighted = name === this.highlightedName;
+            const activeName = this.highlightedRowName || this.selectedName;
+            const isHighlighted = name === this.highlightedRowName;
             const isSelected = name === this.selectedName;
             element.classList.toggle("highlighted", isHighlighted);
             element.classList.toggle("selected", isSelected);
@@ -337,8 +343,8 @@ export class MultipleSmallLineCharts {
             smallLineChart.setOnPointHoverCallback((seriesName, event, item) => callIfDefined(this.onPointHoverCallback, key, seriesName, event, item));
             const series = object.series || [{ name: key, type: object.type, data: object.data, color: "black" }];
             series.forEach(item => smallLineChart.add(item.name, item.type, item.data, item.color || "black"));
-            element.addEventListener("mouseenter", () => callIfDefined(this.onHoverCallback, key));
-            element.addEventListener("mouseleave", () => callIfDefined(this.onHoverCallback, undefined));
+            element.addEventListener("mouseenter", () => callIfDefined(this.onHoverChartCallback, key));
+            element.addEventListener("mouseleave", () => callIfDefined(this.onHoverChartCallback, undefined));
             element.addEventListener("click", () => callIfDefined(this.onClickCallback, key));
             return { name: key, element, chart: smallLineChart };
         });

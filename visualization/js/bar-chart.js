@@ -17,7 +17,7 @@ export class BarChart {
     onHoverItemCallback = undefined;
     onHoverRowCallback = undefined;
     onClickItemCallback = undefined;
-    highlightedName = undefined;
+    highlightedRowName = undefined;
     highlightedItem = undefined;
     selectedName = undefined;
 
@@ -87,7 +87,7 @@ export class BarChart {
     }
 
     setHighlightRow(name) {
-        this.highlightedName = name;
+        this.highlightedRowName = name;
         this.updateStyles();
     }
 
@@ -104,14 +104,14 @@ export class BarChart {
     updateStyles() {
         // update row background
         this.hoverGroups.selectAll(".bar-row-bg")
-            .classed("highlighted", d => this.nameAccessor(d) === this.highlightedName);
+            .classed("highlighted", d => this.nameAccessor(d) === this.highlightedRowName);
 
         // update bar background
         this.content.selectAll("rect")
             .classed("highlighted", d => d.equalsId(this.highlightedItem))
             .classed("selected", d => this.nameAccessor(d) === this.selectedName)
             .classed("dimmed", d => {
-                const activeName = this.highlightedName || this.selectedName;
+                const activeName = this.highlightedRowName || this.selectedName;
                 return activeName !== undefined && this.nameAccessor(d) !== activeName;
             });
     }

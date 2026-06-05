@@ -202,7 +202,8 @@ async function main() {
         barChart.setHighlightRow(hoveredAntibiotic);
         barChart.setHighlightItem(hoveredItem);
         barChart.setSelection(selectedAntibiotic);
-        lineChart.setHighlight(hoveredAntibiotic);
+        lineChart.setHighlightChart(hoveredAntibiotic);
+        lineChart.setHighlightItem(hoveredItem);
         lineChart.setSelection(selectedAntibiotic);
         const item = activeAntibiotic !== undefined ? getCurrentItem(activeAntibiotic) : undefined;
         updateDetailPanel(item);
@@ -344,8 +345,9 @@ async function main() {
     barChart.setOnClickItemCallback(setSelectedAntibiotic);
     barChart.setOnHoverRowCallback((antibioticName) => {
         barChart.setHighlightRow(antibioticName);
+        lineChart.setHighlightChart(antibioticName);
     });
-    lineChart.setOnHoverCallback(setHoveredAntibiotic);
+    lineChart.setOnHoverChartCallback(setHoveredAntibiotic);
     lineChart.setOnClickCallback(setSelectedAntibiotic);
     lineChart.setOnPointHoverCallback((antibioticName, seriesName, event, item) => {
         if (antibioticName === undefined) {
@@ -396,7 +398,7 @@ async function main() {
             d3.select(element)
                 .classed("highlighted-hovered", true);
         } else if (mode === "group") {
-            lineChartRegions.setHighlight(dataItem);
+            lineChartRegions.setHighlightChart(dataItem);
             boxPlot.highlightRow(dataItem);
         }
     });
@@ -408,7 +410,7 @@ async function main() {
             d3.select(element)
                 .classed("highlighted-hovered", false);
         } else if (mode === "group") {
-            lineChartRegions.setHighlight(undefined);
+            lineChartRegions.setHighlightChart(undefined);
             boxPlot.removeRowHighlight(dataItem);
         }
     });

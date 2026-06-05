@@ -104,7 +104,9 @@ h2 {
 
 .bar {
     cursor: pointer;
-    transition: fill 120ms ease, opacity 120ms ease;
+    stroke: transparent;
+    stroke-width: 2;
+    transition: opacity 120ms ease, stroke 120ms ease, stroke-width 120ms ease;
 }
 
 .bar.dimmed {
@@ -112,11 +114,13 @@ h2 {
 }
 
 .bar.highlighted {
-    fill: #2f7fbd;
+    stroke: #2f7fbd;
+    stroke-width: 2.5;
 }
 
 .bar.selected {
-    fill: #c84f31;
+    stroke: #c84f31;
+    stroke-width: 3;
     opacity: 1;
 }
 
@@ -143,8 +147,9 @@ h2 {
 }
 
 .linechart-container.highlighted {
-    border-color: #2f7fbd;
-    background: #eef6fc;
+    /*border-color: #2f7fbd;
+    background: #eef6fc;*/
+    background: #fff9c4;
 }
 
 .linechart-container.selected {
