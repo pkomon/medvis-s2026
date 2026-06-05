@@ -375,26 +375,16 @@ async function main() {
                 .attr("fill", "red");
         } else if (mode === "group") {
             lineChartRegions.setHighlight(dataItem);
-            d3.select(element)
-                .transition()
-                .duration(100)
-                .attr("fill", "#fff9c4")
+            boxPlot.highlightRow(dataItem);
         }
     });
     boxPlot.setOnMouseLeave((mode, dataItem, element, event) => {
         //console.log("Mouse leave event for boxplot: ", mode, dataItem, element);
         if (mode === "item") {
             hideTooltip();
-            d3.select(element)
-                .transition()
-                .duration(100)
-                .attr("fill", "black");
         } else if (mode === "group") {
             lineChartRegions.setHighlight(undefined);
-            d3.select(element)
-                .transition()
-                .duration(100)
-                .attr("fill", "transparent");
+            boxPlot.removeRowHighlight(dataItem);
         }
     });
 }

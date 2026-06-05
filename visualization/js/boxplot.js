@@ -25,7 +25,6 @@ export class BoxPlot {
     onMouseEnterCallback = undefined;
 
     summaryPerGroup = undefined;
-    highlightedCountryCodes = {};
 
     constructor(containerId, nameAccessor, valueAccessor) {
         this.nameAccessor = nameAccessor;
@@ -111,23 +110,18 @@ export class BoxPlot {
         this.onMouseLeaveCallback = callback;
     }
 
-    highlightItemsForCountry(countryCode) {
-        console.log(countryCode);
-        this.svg.selectAll(`.boxplot-data-item-${countryCode}`)
-            .classed("highlighted", true);
-        highlightedCountryCodes[countryCode] = true;
-    }
-
-    clearHighlight(countryCode) {
-        this.svg.selectAll(`.boxplot-data-item-${countryCode}`)
-            .classed("highlighted", true);
-        delete this.highlightedCountryCodes[countryCode];
-    }
-
     toggleHighlightForCountry(countryCode) {
-        this.highlightedCountryCodes[countryCode] = !this.highlightedCountryCodes[countryCode];
-        this.svg.selectAll(`.boxplot-data-item-${countryCode}`)
-            .classed("highlighted", this.highlightedCountryCodes[countryCode]);
+        const selection = this.svg.selectAll(`.boxplot-data-item-${countryCode}`);
+        selection.classed("highlighted", !selection.classed("highlighted"));
+    }
+
+    highlightRow(antibiotic) {
+        this.svg.selectAll(`#boxplot-row-${antibiotic}>.boxplot-row-bg`)
+            .classed("highlighted", true);
+    }
+    removeRowHighlight(antibiotic) {
+        this.svg.selectAll(`#boxplot-row-${antibiotic}>.boxplot-row-bg`)
+            .classed("highlighted", false);
     }
 
     setData(data, showDots = true) {
@@ -158,7 +152,7 @@ export class BoxPlot {
             .data(summaryPerGroup)
             .join("g")
             .attr("class", "boxplot-row")
-            .attr("id", d => `boxplot-row_${d[0]}`)
+            .attr("id", d => `boxplot-row-${d[0]}`)
             .on("mouseenter",
                 (event, d) => callIfDefined(this.onMouseEnterCallback, "group", d[0], event.target.querySelector(".boxplot-row-bg"), event))
             .on("mouseleave",
@@ -172,9 +166,7 @@ export class BoxPlot {
             .attr("x", -this.margin.left)
             .attr("y", ([groupName, _]) => this.y(groupName) - this.y.padding() * this.y.bandwidth() * 0.5)
             .attr("width", this.width + this.margin.left + this.margin.right - 10)
-            .attr("height", this.y.step())
-            .attr("fill", "transparent")
-            .attr("stroke", "none");
+            .attr("height", this.y.step());
 
         // add boxes
         const boxGroups = groupRows

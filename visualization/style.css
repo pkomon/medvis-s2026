@@ -191,6 +191,16 @@ h2 {
     cursor: crosshair;
 }
 
+.boxplot-row-bg {
+    fill: transparent;
+    stroke: none;
+}
+
+.boxplot-row-bg.highlighted {
+    fill: #fff9c4;
+transition: fill 100ms ease, opacity 100ms ease;
+}
+
 .boxplot-data-item {
     fill: black;
     stroke: none;
