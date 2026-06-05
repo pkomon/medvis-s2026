@@ -152,6 +152,7 @@ async function main() {
         const susceptible = 100 - item.percentResistant;
 
         detailContent.className = "detail-content";
+        const isCountryMode = document.getElementById("area-mode-select").value === "Country";
         detailContent.innerHTML = `
             <div class="detail-item">
                 <span class="detail-label">Antibiotic</span>
@@ -166,8 +167,10 @@ async function main() {
                 <span class="detail-value">${formatPercent(susceptible)}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Rank</span>
-                <span class="detail-value">${rank} of ${total} (lower resistance first)</span>
+                <div ${isCountryMode ? "" : "hidden"}>
+                    <span class="detail-label">Rank</span>
+                    <span class="detail-value">${rank} of ${total} (lower resistance first)</span>
+                </div>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Resistant / ASTs</span>
