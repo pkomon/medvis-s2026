@@ -100,6 +100,13 @@ function createDetailsHtml(item, total, rank, isCountryMode) {
         `;
 }
 
+function createLegendItem(name, color) {
+    const div = document.createElement("div");
+    div.classList.add("legend-item");
+    div.innerHTML = `<span class="legend-color" style="background:${color}"></span><span>${name}</span>`;
+    return div;
+}
+
 async function main() {
     const dataset = await fetchDataset();
 
@@ -114,6 +121,8 @@ async function main() {
     tooltip.className = "tooltip";
     tooltip.hidden = true;
     document.body.appendChild(tooltip);
+    const legend = document.getElementById("legend-country");
+    const legendRegion = document.getElementById("legend-region");
 
     let currentLineChartData = [];
     let currentBarChartData = [];
@@ -122,7 +131,8 @@ async function main() {
     let hoveredItem = undefined;
     let selectedItem = undefined;
 
-    const getActiveAntibiotic = () => hoveredAntibiotic || selectedAntibiotic;
+    const mainCountryColor = "#69b3a2";
+    const compareCountryColor = "#7570b3";
 
     const getCurrentItem = (antibioticName) => currentBarChartData
         .find(item => item.antibiotic === antibioticName);
@@ -239,7 +249,7 @@ async function main() {
                         name: dataset.countryIndex.get(country),
                         type: "line",
                         data: primaryLineData[antibiotic],
-                        color: "black",
+                        color: mainCountryColor,
                     });
                 }
                 if (comparisonLineData[antibiotic] !== undefined) {
@@ -247,7 +257,7 @@ async function main() {
                         name: dataset.countryIndex.get(compareCountry),
                         type: "line",
                         data: comparisonLineData[antibiotic],
-                        color: "#2f7fbd",
+                        color: compareCountryColor,
                     });
                 }
                 return [antibiotic, { series }];
@@ -290,6 +300,22 @@ async function main() {
                 return [antibiotic, { type: "uncertain", data: uncertainData }];
             }));
         lineChartRegions.setData(regionLineChartData);
+
+        //update legend
+
+        legend.textContent = "";
+        const mainCountryName = dataset.countryIndex.get(country);
+        legend.insertAdjacentElement("beforeend", createLegendItem(mainCountryName, mainCountryColor));
+        if (compareCountry !== undefined && compareCountry !== "") {
+            const compareCountryName = dataset.countryIndex.get(compareCountry);
+            legend.insertAdjacentElement("beforeend", createLegendItem(compareCountryName, compareCountryColor));
+        }
+
+        legendRegion.textContent = "";
+        //TODO move colors to some variable
+        legendRegion.insertAdjacentElement("beforeend", createLegendItem("Min to max", "#d3e4e0"));
+        legendRegion.insertAdjacentElement("beforeend", createLegendItem("0.25 to 0.75 quantile", "#69b3a2"));
+        legendRegion.insertAdjacentElement("beforeend", createLegendItem("Median", "black"));
     };
 
     // TODO for each selection, we should update all others with available data - but this might be confusing to user?
