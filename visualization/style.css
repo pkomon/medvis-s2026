@@ -144,3 +144,49 @@ h2 {
 .line-series {
     transition: stroke 120ms ease, stroke-width 120ms ease, opacity 120ms ease;
 }
+
+.tooltip {
+    position: fixed;
+    z-index: 20;
+    pointer-events: none;
+    max-width: 280px;
+    border: 1px solid #aeb8c8;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+    color: #172033;
+    font-size: 0.85rem;
+    line-height: 1.35;
+}
+
+.tooltip[hidden] {
+    display: none;
+}
+
+.tooltip-title {
+    margin: 0 0 4px 0;
+    font-weight: 700;
+}
+
+.tooltip-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+}
+
+.tooltip-label {
+    color: #536076;
+}
+
+.guide-line {
+    pointer-events: none;
+    stroke: #556274;
+    stroke-dasharray: 4 3;
+    stroke-width: 1;
+}
+
+.line-point {
+    fill: white;
+    cursor: crosshair;
+}

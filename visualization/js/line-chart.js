@@ -12,6 +12,8 @@ export class LineChart {
     root = undefined;
     linesContainer = undefined;
     uncertainContainer = undefined;
+    guideContainer = undefined;
+    onPointHoverCallback = undefined;
 
     constructor(containerId, xAccessor, yAccessorLine, yAccessorUncertain, desiredWidth = 200, desiredHeight = 80, title, indicatorVisible = false) {
         this.xAccessor = xAccessor;
@@ -23,6 +25,8 @@ export class LineChart {
         const margin = { top: 15, right: 25, bottom: 25, left: 25 };
         const width = desiredWidth - margin.left - margin.right;
         const height = desiredHeight - margin.top - margin.bottom;
+        this.width = width;
+        this.height = height;
 
         // append the svg object to the body of the page
         this.svg = this.root
@@ -34,6 +38,17 @@ export class LineChart {
 
         this.linesContainer = this.svg.append("g");
         this.uncertainContainer = this.svg.append("g");
+        this.guideContainer = this.svg.append("g")
+            .attr("class", "line-guide")
+            .style("display", "none");
+        this.guideContainer.append("line")
+            .attr("class", "guide-line guide-line-x")
+            .attr("y1", 0)
+            .attr("y2", height);
+        this.guideContainer.append("line")
+            .attr("class", "guide-line guide-line-y")
+            .attr("x1", 0)
+            .attr("x2", width);
 
         // indicator for current time
         this.indicator = this.svg
@@ -96,6 +111,31 @@ export class LineChart {
         this.indicator.style("visibility", visible ? "visible" : "hidden");
     }
 
+    setOnPointHoverCallback(callback) {
+        this.onPointHoverCallback = callback;
+    }
+
+    setGuide(year, value) {
+        if (year === undefined || value === undefined) {
+            this.clearGuide();
+            return;
+        }
+
+        const x = this.x(year);
+        const y = this.y(value);
+        this.guideContainer.style("display", null);
+        this.guideContainer.select(".guide-line-x")
+            .attr("x1", x)
+            .attr("x2", x);
+        this.guideContainer.select(".guide-line-y")
+            .attr("y1", y)
+            .attr("y2", y);
+    }
+
+    clearGuide() {
+        this.guideContainer.style("display", "none");
+    }
+
     updateLines() {
         Object.keys(this.lines).forEach((name) => {
             const object = this.lines[name];
@@ -119,14 +159,32 @@ export class LineChart {
                     .attr("stroke", color)
                     .attr("stroke-width", 2.5);
 
-                selection
+                this.linesContainer.selectAll(`.${lineId}-point`)
                     .data(lineData)
                     .join("circle")
-                    .attr("r", 3)
+                    .attr("class", `${lineId}-point line-point`)
+                    .attr("r", 5)
                     .attr("cx", d => this.x(this.xAccessor(d)))
                     .attr("cy", d => this.y(this.yAccessorLine(d)))
+                    .attr("fill", "white")
                     .attr("stroke", color)
-                    .attr("stroke-width", 2.5);
+                    .attr("stroke-width", 2.5)
+                    .style("pointer-events", "all")
+                    .on("mouseenter", (event, d) => {
+                        if (this.onPointHoverCallback !== undefined) {
+                            this.onPointHoverCallback(name, event, d);
+                        }
+                    })
+                    .on("mousemove", (event, d) => {
+                        if (this.onPointHoverCallback !== undefined) {
+                            this.onPointHoverCallback(name, event, d);
+                        }
+                    })
+                    .on("mouseleave", (event, d) => {
+                        if (this.onPointHoverCallback !== undefined) {
+                            this.onPointHoverCallback(undefined, event, d);
+                        }
+                    });
             } else if (object.type === "uncertain") {
                 const lineData = object.data;
                 const lineId = object.id;
@@ -163,6 +221,8 @@ export class LineChart {
                     .attr("stroke", "black");
             }
         });
+        this.linesContainer.raise();
+        this.guideContainer.raise();
     }
 
     add(name, type, data, color) {
@@ -201,6 +261,7 @@ export class MultipleSmallLineCharts {
     selectedName = undefined;
     onHoverCallback = undefined;
     onClickCallback = undefined;
+    onPointHoverCallback = undefined;
 
     constructor(containerId, xAccessor, yAccessor, yAccessorUncertain) {
         //this.container = d3.select(`#${containerId}`);
@@ -216,6 +277,18 @@ export class MultipleSmallLineCharts {
 
     setOnClickCallback(callback) {
         this.onClickCallback = callback;
+    }
+
+    setOnPointHoverCallback(callback) {
+        this.onPointHoverCallback = callback;
+    }
+
+    setGuide(year, value) {
+        this.lineCharts.forEach(({ chart }) => chart.setGuide(year, value));
+    }
+
+    clearGuide() {
+        this.lineCharts.forEach(({ chart }) => chart.clearGuide());
     }
 
     setHighlight(name) {
@@ -260,7 +333,13 @@ export class MultipleSmallLineCharts {
             element.className = "linechart-container";
             this.container.appendChild(element);
             const smallLineChart = new LineChart(element.id, this.xAccessor, this.yAccessor, this.yAccessorUncertain, undefined, undefined, key);
-            smallLineChart.add(key, object.type, object.data, "black");
+            smallLineChart.setOnPointHoverCallback((seriesName, event, item) => {
+                if (this.onPointHoverCallback !== undefined) {
+                    this.onPointHoverCallback(key, seriesName, event, item);
+                }
+            });
+            const series = object.series || [{ name: key, type: object.type, data: object.data, color: "black" }];
+            series.forEach(item => smallLineChart.add(item.name, item.type, item.data, item.color || "black"));
             element.addEventListener("mouseenter", () => {
                 if (this.onHoverCallback !== undefined) {
                     this.onHoverCallback(key);

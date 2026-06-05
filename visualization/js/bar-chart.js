@@ -126,12 +126,17 @@ export class BarChart {
             .attr("class", "bar")
             .on("mouseenter", (event, d) => {
                 if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(this.nameAccessor(d));
+                    this.onHoverCallback(this.nameAccessor(d), event, d);
                 }
             })
-            .on("mouseleave", () => {
+            .on("mousemove", (event, d) => {
                 if (this.onHoverCallback !== undefined) {
-                    this.onHoverCallback(undefined);
+                    this.onHoverCallback(this.nameAccessor(d), event, d);
+                }
+            })
+            .on("mouseleave", (event, d) => {
+                if (this.onHoverCallback !== undefined) {
+                    this.onHoverCallback(undefined, event, d);
                 }
             })
             .on("click", (event, d) => {

@@ -85,8 +85,13 @@ async function main() {
     const bacteriaSelect = document.getElementById("bacteria-select");
     const yearSelect = document.getElementById("year-select");
     const countrySelect = document.getElementById("country-select");
+    const compareCountrySelect = document.getElementById("compare-country-select");
     const regionSelect = document.getElementById("region-select");
     const detailContent = document.getElementById("detail-content");
+    const tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    tooltip.hidden = true;
+    document.body.appendChild(tooltip);
 
     let currentLineChartData = [];
     let currentBarChartData = [];
@@ -97,6 +102,39 @@ async function main() {
 
     const getCurrentItem = (antibioticName) => currentBarChartData
         .find(item => item.antibiotic === antibioticName);
+
+    const moveTooltip = (event) => {
+        const margin = 14;
+        tooltip.style.left = `${event.clientX + margin}px`;
+        tooltip.style.top = `${event.clientY + margin}px`;
+    };
+
+    const showTooltip = (event, title, rows) => {
+        tooltip.innerHTML = `
+            <div class="tooltip-title">${title}</div>
+            ${rows.map(([label, value]) => `
+                <div class="tooltip-row">
+                    <span class="tooltip-label">${label}</span>
+                    <span>${value}</span>
+                </div>
+            `).join("")}
+        `;
+        moveTooltip(event);
+        tooltip.hidden = false;
+    };
+
+    const hideTooltip = () => {
+        tooltip.hidden = true;
+    };
+
+    const showDataItemTooltip = (event, item, title = item.antibiotic) => {
+        showTooltip(event, title, [
+            ["Resistance", formatPercent(item.percentResistant)],
+            ["Resistant / ASTs", `${formatInteger(item.numResistant)} / ${formatInteger(item.numTests)}`],
+            ["Country", item.countryName],
+            ["Year", item.year],
+        ]);
+    };
 
     const updateDetailPanel = (antibioticName) => {
         const item = antibioticName !== undefined ? getCurrentItem(antibioticName) : undefined;
@@ -159,9 +197,14 @@ async function main() {
         updateDetailPanel(activeAntibiotic);
     };
 
-    const setHoveredAntibiotic = (antibioticName) => {
+    const setHoveredAntibiotic = (antibioticName, event, item) => {
         hoveredAntibiotic = antibioticName;
         updateLinkedState();
+        if (antibioticName !== undefined && item !== undefined && event !== undefined) {
+            showDataItemTooltip(event, item);
+        } else {
+            hideTooltip();
+        }
     };
 
     const setSelectedAntibiotic = (antibioticName) => {
@@ -173,6 +216,7 @@ async function main() {
         const [infection, pathogen] = bacteriaSelect.value.split("_");
         const year = parseInt(yearSelect.value);
         const country = countrySelect.value;
+        const compareCountry = compareCountrySelect.value;
         const regionName = regionSelect.value;
         console.log(`Update chart, infection type=${infection}, pathogen=${pathogen}`);
 
@@ -182,9 +226,38 @@ async function main() {
             .filter(item => item.infection === infection
                 && item.pathogen === pathogen
                 && item.iso3 === country)
-            .sort((a, b) => a.antibiotic < b.antibiotic && a.year < b.year);
-        const perLineData = Object.fromEntries(Object.entries(groupBy(currentLineChartData, item => item.antibiotic))
-            .map(([key, value], _) => [key, { "type": "line", "data": value }]));
+            .sort((a, b) => a.antibiotic.localeCompare(b.antibiotic) || a.year - b.year);
+        const comparisonLineChartData = compareCountry !== "" && compareCountry !== country
+            ? dataset.items
+                .filter(item => item.infection === infection
+                    && item.pathogen === pathogen
+                    && item.iso3 === compareCountry)
+                .sort((a, b) => a.antibiotic.localeCompare(b.antibiotic) || a.year - b.year)
+            : [];
+        const primaryLineData = groupBy(currentLineChartData, item => item.antibiotic);
+        const comparisonLineData = groupBy(comparisonLineChartData, item => item.antibiotic);
+        const antibioticNames = [...new Set([...Object.keys(primaryLineData), ...Object.keys(comparisonLineData)])];
+        const perLineData = Object.fromEntries(antibioticNames
+            .map(antibiotic => {
+                const series = [];
+                if (primaryLineData[antibiotic] !== undefined) {
+                    series.push({
+                        name: dataset.countryIndex.get(country),
+                        type: "line",
+                        data: primaryLineData[antibiotic],
+                        color: "black",
+                    });
+                }
+                if (comparisonLineData[antibiotic] !== undefined) {
+                    series.push({
+                        name: dataset.countryIndex.get(compareCountry),
+                        type: "line",
+                        data: comparisonLineData[antibiotic],
+                        color: "#2f7fbd",
+                    });
+                }
+                return [antibiotic, { series }];
+            }));
         lineChart.setData(perLineData);
 
         // update bar chart
@@ -235,6 +308,7 @@ async function main() {
     bacteriaSelect.addEventListener("change", (event) => updateCharts());
     yearSelect.addEventListener("change", (event) => updateCharts());
     countrySelect.addEventListener("change", (event) => updateCharts());
+    compareCountrySelect.addEventListener("change", (event) => updateCharts());
     regionSelect.addEventListener("change", (event) => updateCharts());
 
     document.getElementById("area-mode-select").addEventListener("change", (event) => {
@@ -253,6 +327,17 @@ async function main() {
     barChart.setOnClickCallback(setSelectedAntibiotic);
     lineChart.setOnHoverCallback(setHoveredAntibiotic);
     lineChart.setOnClickCallback(setSelectedAntibiotic);
+    lineChart.setOnPointHoverCallback((antibioticName, seriesName, event, item) => {
+        if (antibioticName === undefined) {
+            setHoveredAntibiotic(undefined);
+            lineChart.clearGuide();
+            return;
+        }
+        hoveredAntibiotic = antibioticName;
+        updateLinkedState();
+        lineChart.setGuide(item.year, item.percentResistant);
+        showDataItemTooltip(event, item, `${antibioticName} (${seriesName})`);
+    });
 
     // fill options for dropdown
     const bacteriaSelectData = Object.fromEntries([...dataset.infectionIndex.entries()] // infection -> pathogen -> antibiotic
@@ -265,27 +350,33 @@ async function main() {
             return [regionName, { "values": values, "names": names }];
         }));
     updateSelectGroup(countrySelect, countrySelectData);
+    updateSelectGroup(compareCountrySelect, countrySelectData);
+    compareCountrySelect.insertBefore(new Option("None", ""), compareCountrySelect.firstChild);
+    compareCountrySelect.value = "";
     updateSelectGroup(regionSelect, { "values": ["Global", ...dataset.regionIndex.keys()] });
 
     // updating options does not trigger event, call ourselves
     updateCharts();
 
-    boxPlot.setOnMouseEnter((mode, dataItem, element) => {
+    boxPlot.setOnMouseEnter((mode, dataItem, element, event) => {
         if (mode === "item") {
+            const [antibioticName, item] = dataItem;
+            lineChartRegions.setHighlight(antibioticName);
+            showDataItemTooltip(event, item, `${antibioticName} (${item.countryName})`);
             d3.select(element)
                 .transition()
                 .duration(100)
                 .attr("fill", "red");
-            //TODO show popup with details (using dataItem)
         }
     });
-    boxPlot.setOnMouseLeave((mode, dataItem, element) => {
+    boxPlot.setOnMouseLeave((mode, dataItem, element, event) => {
         if (mode === "item") {
+            lineChartRegions.setHighlight(undefined);
+            hideTooltip();
             d3.select(element)
                 .transition()
                 .duration(100)
                 .attr("fill", "black");
-            //TODO hide popup
         }
     });
 }
