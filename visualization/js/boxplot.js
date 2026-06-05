@@ -146,7 +146,7 @@ export class BoxPlot {
             .attr("width", ([_, item]) => this.x(item.q3 - item.q1))
             .attr("y", ([groupName, _]) => this.y(groupName))
             .attr("height", this.y.bandwidth())
-            .attr("fill", "lightgrey")
+            .attr("fill", "#69b3a2")
             .attr("stroke", "black")
             .attr("stroke-width", 1);
         this.boxes.selectAll(".medianLine")

@@ -201,7 +201,7 @@ export class LineChart {
                         .x(d => this.x(this.xAccessor(d)))
                         .y0(d => this.y(this.yAccessorUncertain(d).min))
                         .y1(d => this.y(this.yAccessorUncertain(d).max)))
-                    .attr("fill", "#EEEEEE");
+                    .attr("fill", "#d3e4e0");
                 selection
                     .join("path")
                     .attr("class", `${lineId}`)
@@ -209,7 +209,7 @@ export class LineChart {
                         .x(d => this.x(this.xAccessor(d)))
                         .y0(d => this.y(this.yAccessorUncertain(d).q1))
                         .y1(d => this.y(this.yAccessorUncertain(d).q3)))
-                    .attr("fill", "lightgrey");
+                    .attr("fill", "#69b3a2");
 
                 selection
                     .join("path")
