@@ -38,8 +38,8 @@ def read_and_concat_files(input_dir_path: Path, output_file_path: Path) -> pd.Da
             year = file_path.name.split("_")[0]
             df.insert(0, "Year", year)
 
-            # remove BLOOD entries, duplicate, use consitent antibiotics names
-            df = df[df["Specimen"] != "Specimen"]
+            # remove duplicate BLOOD entries, use consistent antibiotics names
+            df = df[df["Specimen"] != "BLOOD"]
             #df["Specimen"] = df["Specimen"].replace("BLOOD", "Bloodstream")
             df["AntibioticName"] = df["AntibioticName"].str.replace("resistance", "")
             df["AntibioticName"] = df["AntibioticName"].str.replace("Third generation", "3rd-gen")
